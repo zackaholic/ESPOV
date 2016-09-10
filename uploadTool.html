@@ -1,0 +1,216 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+  </head>
+  <body id="page" style="width:900px; height:800px">
+    <canvas id="myCanvas" width="900" height="300" style="touch-action: none; border:1px solid; background-color: #404040"></canvas>
+    <p></p>
+    <div id="uploadButton" style="cursor: pointer; border:1px solid; background-color:#b3e7ff; width:100px; height:50px; display:inline-block">
+     <h3 style="font-family:Arial; text-align:center">Upload</h3> 
+    </div>
+    <div id="colorPicker" style="touch-action: none; display: inline-block; float:right">
+      <div id="red" style="border:1px solid; background-color:red; width:50px; height:50px; display:inline-block">
+      </div>      
+      <div id="green" style="border:1px solid; background-color:green; width:50px; height:50px; display:inline-block">
+      </div>
+      <div id="blue" style="border:1px solid; background-color:blue; height:50px; width:50px; display:inline-block">
+      </div>
+      <div id="white" style="border: 1px solid; background-color:white; height:50px; width:50px; display:inline-block">
+      </div>
+      <div id="erase" style="border: 1px dashed; background-color:white; height:50px; width:50px; display:inline-block">
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      var canvas = document.getElementById('myCanvas');
+      var palette = document.getElementById('colorPicker')
+      var ctx = canvas.getContext('2d');
+      var pixelSize = 30;
+      var canvasRows = 10;
+      var canvasColumns = 30;
+      var Pixels = new Array(canvasRows * canvasColumns);  
+      var drawing, erasing, eraseSelected, drawSelected;
+      var drawColor;
+      var eraseColor = "#404040";
+      var httpRequest;
+
+      document.getElementById("uploadButton").onclick = function() {
+        Pixels.upload();
+      };
+
+      Pixels.upload = function() {
+        for (var i = 0; i < Pixels.length; i++) {
+          Pixels[i] = Pixels[i] === undefined ? 0 : Pixels[i];
+        }
+        console.log(Pixels);
+        httpRequest = new XMLHttpRequest();
+        httpRequest.onreadystatechange = logContents; //do I need a response?
+        httpRequest.open('POST', 'upload');
+        httpRequest.send(Pixels);
+      }
+
+      function logContents() {
+        if (httpRequest.readyState === XMLHttpRequest.DONE) {
+          if (httpRequest.status === 200) {
+            console.log(httpRequest.responseText);
+          } else {
+            console.log('There was a problem with the request.');
+          }
+        }
+      }
+
+      function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+        var xPos = evt.clientX - rect.left;
+        var yPos = evt.clientY - rect.top;
+        return {x : xPos, y : yPos};
+      }
+
+      Pixels.getPixel = function(row, col) {
+
+      };
+
+      Pixels.setPixel = function(row, col, color) {
+        var p = row + col * canvasRows;
+
+        if (color === 0) {
+          Pixels[p] = 0;
+          ctx.fillStyle = eraseColor;
+          ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+        } else {
+          Pixels[p] = convertTo8Bit(color);
+          ctx.fillStyle = drawColor;
+          ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+        }
+      };
+
+      function convertTo8Bit(color) {
+        var color = parseInt(color.replace(/^#/, ''), 16);
+        var red = color >> 21;
+        var green = color >> 13 & 0x07;
+        var blue = color >> 6 & 0x03;
+        var color8Bit = (red << 5) | (green << 2) | blue;
+        return color8Bit;
+      }
+
+      function handleMove(evt) {
+        var row, col;
+        var mouse = getMousePos(canvas, evt);
+
+        col = Math.floor(mouse.x / pixelSize);
+        row = Math.floor(mouse.y / pixelSize);
+
+        if (erasing) {
+          Pixels.setPixel(row, col, 0);
+        }
+        if (drawing) {
+          Pixels.setPixel(row, col, drawColor);
+        }
+
+      }
+
+      function handleMouseUp(evt) {
+        drawing = false;
+        erasing = false;        
+      }
+
+      function handleMouseDown(evt) {
+        var row, col;
+        var mouse = getMousePos(canvas, evt);
+
+        col = Math.floor(mouse.x / pixelSize);
+        row = Math.floor(mouse.y / pixelSize);
+
+        if (eraseSelected) {
+          erasing = true;
+          drawing = false;
+          Pixels.setPixel(row, col, 0);
+        } 
+        if (drawSelected) {
+          drawing = true;
+          erasing = false;
+          Pixels.setPixel(row, col, drawColor);
+        }       
+      }
+
+      function setBorderIndicator(element) {
+        element.style.border = "3px solid";
+        if (element.id !== "red") {
+         redButton.style.border = "1px solid";
+        }
+        if (element.id !== "green") {
+          greenButton.style.border = "1px solid";
+        }
+        if (element.id !== "blue") {
+          blueButton.style.border = "1px solid";
+        }
+        if (element.id !== "white") {
+          whiteButton.style.border = "1px solid";
+        }
+        if (element.id !== "erase") {
+          eraseButton.style.border = "1px dashed";
+        }        
+      }
+
+      var redButton = document.getElementById("red");
+      var greenButton = document.getElementById("green");
+      var blueButton = document.getElementById("blue");
+      var whiteButton = document.getElementById("white");    
+      var eraseButton = document.getElementById("erase");  
+
+      canvas.addEventListener("mousemove", handleMove);
+      canvas.addEventListener("mousedown", handleMouseDown, false);
+      canvas.addEventListener("mouseup", handleMouseUp);
+      //these don't work yet
+      canvas.addEventListener("touchmove", function(){console.log('hi');});
+      canvas.addEventListener("touchstart", handleMouseDown);
+      canvas.addEventListener("touchend", handleMouseUp);
+
+      erase.addEventListener("mousedown", function(evt) {
+        eraseSelected = true;
+        drawSelected = false;
+        drawColor = eraseColor;
+        setBorderIndicator(this);
+      });
+      red.addEventListener("mousedown", function(evt) {
+        drawColor = "#ff0000";
+        eraseSelected = false;
+        drawSelected = true;
+        setBorderIndicator(this);
+      });
+      green.addEventListener("mousedown", function(evt) {
+        drawColor = "#00ff00";
+        eraseSelected = false;
+        drawSelected = true;
+        setBorderIndicator(this);
+      });      
+      blue.addEventListener("mousedown", function(evt) {
+        drawColor = "#0000ff";
+        eraseSelected = false;
+        drawSelected = true;
+        setBorderIndicator(this);
+      });
+      white.addEventListener("mousedown", function(evt) {
+        drawColor = "#ffffff";
+        eraseSelected = false;
+        drawSelected = true;
+        setBorderIndicator(this);
+      });
+    </script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
