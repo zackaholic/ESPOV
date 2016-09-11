@@ -3,22 +3,13 @@
   <head>
   </head>
   <body id="page" style="width:900px; height:800px">
-    <canvas id="myCanvas" width="900" height="300" style="touch-action: none; border:1px solid; background-color: #404040"></canvas>
+    <canvas id="myCanvas" width="900" height="300" style="touch-action: none; border:1px solid; background-color: #000000"></canvas>
     <p></p>
     <div id="uploadButton" style="cursor: pointer; border:1px solid; background-color:#b3e7ff; width:100px; height:50px; display:inline-block">
      <h3 style="font-family:Arial; text-align:center">Upload</h3> 
     </div>
-    <div id="colorPicker" style="touch-action: none; display: inline-block; float:right">
-      <div id="red" style="border:1px solid; background-color:red; width:50px; height:50px; display:inline-block">
-      </div>      
-      <div id="green" style="border:1px solid; background-color:green; width:50px; height:50px; display:inline-block">
-      </div>
-      <div id="blue" style="border:1px solid; background-color:blue; height:50px; width:50px; display:inline-block">
-      </div>
-      <div id="white" style="border: 1px solid; background-color:white; height:50px; width:50px; display:inline-block">
-      </div>
-      <div id="erase" style="border: 1px dashed; background-color:white; height:50px; width:50px; display:inline-block">
-      </div>
+    <div id="colorPicker" style="width: 510px; touch-action: none; display: inline-block; float:right">
+      
     </div>
 
     <script type="text/javascript">
@@ -43,6 +34,7 @@
           Pixels[i] = Pixels[i] === undefined ? 0 : Pixels[i];
         }
         console.log(Pixels);
+        //TODO: try sending as padded hex values, no spaces
         httpRequest = new XMLHttpRequest();
         httpRequest.onreadystatechange = logContents; //do I need a response?
         httpRequest.open('POST', 'upload');
@@ -115,6 +107,7 @@
       }
 
       function handleMouseDown(evt) {
+        //evt contains clientX and clientY- replace getMousePos???
         var row, col;
         var mouse = getMousePos(canvas, evt);
 
@@ -133,30 +126,62 @@
         }       
       }
 
-      function setBorderIndicator(element) {
-        element.style.border = "3px solid";
-        if (element.id !== "red") {
-         redButton.style.border = "1px solid";
+      var createBorderPatrol = function() {
+        var lastElement;
+        var currentElement;
+
+        return function(element) {
+          if (this.currentElement) {
+            this.lastElement = this.currentElement;
+            this.lastElement.style.borderColor = this.lastElement.id;
+          }
+          this.currentElement = element;
+          this.currentElement.style.borderColor = "#000000";
         }
-        if (element.id !== "green") {
-          greenButton.style.border = "1px solid";
+      }
+      var setBorder = createBorderPatrol();
+
+      function pickerMouseDown(evt) {
+        eraseSelected = false;
+        drawSelected = true;
+        drawColor = evt.srcElement.id;
+        setBorder(evt.srcElement);
+      }
+
+
+
+
+      var colorPicker = document.getElementById("colorPicker");
+      //TODO: try an indexed color palette suitable for actual LED values
+      //also gamma correction??
+      function createColorPicker(colors, parent) {
+        function padHex(num) {
+          var paddedNum = num.toString(16);
+          if (paddedNum.length == 1) {
+            return '0' + paddedNum;
+          }
+          return paddedNum;
         }
-        if (element.id !== "blue") {
-          blueButton.style.border = "1px solid";
-        }
-        if (element.id !== "white") {
-          whiteButton.style.border = "1px solid";
-        }
-        if (element.id !== "erase") {
-          eraseButton.style.border = "1px dashed";
+
+        this.parent = parent;
+        this.numColors = colors;
+        var color;
+
+        for (var r = 0; r < 255; r+= 37) {
+          for (var g = 0; g < 255; g+= 37) {
+            for (var b = 0; b < 255; b+= 85) {
+              color = '#' + padHex(r) + padHex(g) + padHex(b);
+              var e = document.createElement("div");
+              e.id = color;
+              e.setAttribute("style", "margin: 0px; border: 2px solid " + color + "; padding: 0px; display: inline-block; width: 20px; height: 20px; background-color: " + color);
+              e.addEventListener("mousedown", pickerMouseDown);
+              parent.appendChild(e);
+            }
+          }
         }        
       }
 
-      var redButton = document.getElementById("red");
-      var greenButton = document.getElementById("green");
-      var blueButton = document.getElementById("blue");
-      var whiteButton = document.getElementById("white");    
-      var eraseButton = document.getElementById("erase");  
+      createColorPicker(256, colorPicker);
 
       canvas.addEventListener("mousemove", handleMove);
       canvas.addEventListener("mousedown", handleMouseDown, false);
@@ -166,36 +191,7 @@
       canvas.addEventListener("touchstart", handleMouseDown);
       canvas.addEventListener("touchend", handleMouseUp);
 
-      erase.addEventListener("mousedown", function(evt) {
-        eraseSelected = true;
-        drawSelected = false;
-        drawColor = eraseColor;
-        setBorderIndicator(this);
-      });
-      red.addEventListener("mousedown", function(evt) {
-        drawColor = "#ff0000";
-        eraseSelected = false;
-        drawSelected = true;
-        setBorderIndicator(this);
-      });
-      green.addEventListener("mousedown", function(evt) {
-        drawColor = "#00ff00";
-        eraseSelected = false;
-        drawSelected = true;
-        setBorderIndicator(this);
-      });      
-      blue.addEventListener("mousedown", function(evt) {
-        drawColor = "#0000ff";
-        eraseSelected = false;
-        drawSelected = true;
-        setBorderIndicator(this);
-      });
-      white.addEventListener("mousedown", function(evt) {
-        drawColor = "#ffffff";
-        eraseSelected = false;
-        drawSelected = true;
-        setBorderIndicator(this);
-      });
+
     </script>
   </body>
 </html>
