@@ -4,8 +4,12 @@
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include "FS.h"
+#include <stdlib.h>
 
-#define NUMPIXELS 20 // Number of LEDs in strip
+#define NUMPIXELS 10 // Number of LEDs in strip
+//pixel dimensions of display
+uint8_t height = 10;
+uint8_t width = 30;
 
 // Here's how to control the LEDs from any two pins:
 //#define DATAPIN    4
@@ -13,7 +17,7 @@
 //Adafruit_DotStar strip = Adafruit_DotStar(NUMPIXELS, DATAPIN, CLOCKPIN, DOTSTAR_BRG);
 
 //hardware spi:
-Adafruit_DotStar strip = Adafruit_DotStar(NUMPIXELS, DOTSTAR_BGR);
+Adafruit_DotStar strip = Adafruit_DotStar(height, DOTSTAR_BGR);
 
 const byte DNS_PORT = 53;
 IPAddress apIP(192, 168, 1, 1);
@@ -23,7 +27,7 @@ ESP8266WebServer server(80);
 uint8_t pixelArray[300];
 
 void handleRoot() {
-  File root = SPIFFS.open("/uploaderTestRGB.html", "r");
+  File root = SPIFFS.open("/uploadTool.html", "r");
   if (!root) {
     Serial.println("Failed to open file");
     return;
@@ -35,29 +39,19 @@ void handleRoot() {
 }
 
 void handleUpload() {
-//TODO: test sending each pixel as a separate argument. Each arg is a
-//struct with key and value String objects. More memory maybe but more
-//intuitive parsing? Any other benefits?
+  height = server.arg("rows").toInt();
+  width = server.arg("cols").toInt();
+  String pixelData = server.arg("pixels");
 
-  String message = server.arg(0);
-
-  String numString;
-  uint8_t index = 0;
+  char numString[2];
+  int index = 0;
   
-  for (int i = 0;  i < 300; i++) {
-    if (message.charAt(i) != ',') {
-      numString += message.charAt(i);    
-    } else {
-      pixelArray[index] = (uint8_t)(numString.toInt());
-//      Serial.println(pixelArray[index]);
-      numString = "";
+  for (int i = 0;  i < pixelData.length(); i+=2) {
+      numString[0] = pixelData.charAt(i);
+      numString[1] = pixelData.charAt(i + 1);
+      pixelArray[index] = (uint8_t)(strtol(numString, NULL, 16));
       index++;
     }
-    //special case: last element
-    if (i == message.length() - 1) {
-      pixelArray[index] = (uint8_t)(numString.toInt());
-    }
-  }
   //have to send a response so client doesn't hang
   server.send(200, "text/plain", "ok");
 }
@@ -74,10 +68,11 @@ void pushPixelColumn(int col, int len) {
   uint32_t red;
   uint32_t green;
   uint32_t blue;
-  for (i = 0; i < len; i++) {           
-    red = pixelArray[startP + i] & 0b11100000;
+  //values 0-43 in pixelArray are 0
+  for (i = 0; i < len; i++) {     
+    red = pixelArray[startP + i] &   0b11100000;
     green = pixelArray[startP + i] & 0b00011100;
-    blue = pixelArray[startP + i] & 0b00000011;
+    blue = pixelArray[startP + i] &  0b00000011;
     color = (red << 16)|(green << 11)|(blue << 6);
     strip.setPixelColor(i, color);
   }
@@ -86,10 +81,9 @@ void pushPixelColumn(int col, int len) {
 
 void servicePOV(int hertz, int width){
   static int index = 0;
-//problem's in this function call.
-  pushPixelColumn(index, NUMPIXELS);
+  pushPixelColumn(index, height);
   index++;
-  if (index == width) {
+  if (index >= width) {
     index = 0;
   }
 }
@@ -139,8 +133,6 @@ void loop(void){
 //try implementing a state machine to switch b/t server and POV modes?
   delay(10); 
   
-  servicePOV(10, 5);
-  delay(250);                        
-
-
+  servicePOV(10, width);
+  delay(20);
 }
