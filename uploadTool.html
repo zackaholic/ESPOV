@@ -2,56 +2,256 @@
 <html>
   <head>
   </head>
-  <body id="page" style="width:900px; height:800px">
-    <canvas id="myCanvas" width="900" height="300" style="touch-action: none; border:1px solid; background-color: #000000"></canvas>
+  <body id="page">
+    <canvas id="myCanvas" width="900" height="600" style="touch-action: none; border:1px solid; background-color: #000000"></canvas>
     <p></p>
-    <div id="uploadButton" style="cursor: pointer; border:1px solid; background-color:#b3e7ff; width:100px; height:50px; display:inline-block">
-     <h3 style="font-family:Arial; text-align:center">Upload</h3> 
+    <div id="uploadButton">
+     <h3>Upload</h3> 
     </div>
-    <div id="colorPicker" style="width: 510px; touch-action: none; display: inline-block; float:right">
+    <div id="colorPicker">
+      <div id="currentColorSwatch">
+      </div>
+      <div id="colorsInUse">
+      </div>
+      <table id="palette">
+      </table>
+      </div>
     </div>
+    <style>
+      #page {
+        width: 900px;
+        height: 800px;
+      }
+      #uploadButton {
+        cursor: pointer;
+        border: 1px solid;
+        background-color: #b3e7ff;
+        width: 100px;
+        height: 50px;
+        display: inline-block;
+      }
+      #uploadButton h3 {
+        font-family:Arial; 
+        text-align:center;
+      }
+      #colorPicker {
+        touch-action: none; 
+        display: inline-block; 
+        float:right; 
+        border:1px solid;
+      }
+      #currentColorSwatch {
+        width:150px; 
+        height:50px; 
+        display:inline-block; 
+        float:right; 
+        border:1px solid
+      }
+      #colorsInUse {
+        width:130px; 
+        height:130px; 
+        border:1px solid
+      }
+      #palette {
+        width: 500px;
+      }
+    </style>
 
     <script type="text/javascript">
       var canvas = document.getElementById('myCanvas');
-      var palette = document.getElementById('colorPicker')
-      var ctx = canvas.getContext('2d');
-      var pixelSize = 30;
-      var canvasRows = 10;
-      var canvasColumns = 30;
-      var Pixels = new Array(canvasRows * canvasColumns);  
-      var drawing, erasing, eraseSelected, drawSelected;
-      var drawColor;
-      var eraseColor = "#404040";
-      var httpRequest;
+      var palette = document.getElementById('palette')
 
-      document.getElementById("uploadButton").onclick = function() {
-        Pixels.upload();
-      };
+      function Pixels(rows, cols, canvas) {
+        var buffer = new Uint8Array(rows * cols);
+        var canvas = canvas;
+        var ctx = canvas.getContext('2d');
+        var pixelSize = 30;
+        var canvasRows = rows;
+        var canvasColumns = cols;
+        var drawing;
+        var drawColor;
 
-      Pixels.upload = function() {
-        for (var i = 0; i < Pixels.length; i++) {
-          Pixels[i] = Pixels[i] === undefined ? 0 : Pixels[i];
+        this.setDrawColor = function(color) {
+          drawColor = color;
+          ctx.fillStyle = color;
         }
-        httpRequest = new XMLHttpRequest();
-        httpRequest.onreadystatechange = logContents; 
-        httpRequest.open('POST', 'upload');
-        httpRequest.send('rows=10&cols=30&pixels=' + Pixels.toHexString());
-      }
 
-      function logContents() {
-        if (httpRequest.readyState === XMLHttpRequest.DONE) {
-          if (httpRequest.status === 200) {
-            console.log(httpRequest.responseText);
-          } else {
-            console.log('There was a problem with the request.');
+        this.outputHexString = function() {
+          var hexString = '';
+          for (var i = 0; i < buffer.length; i++) {
+            hexString += padHex(buffer[i]);
+          }
+          return hexString;
+        }
+
+        this.getPixel = function(row, col) {
+          var p = row + col * canvasRows;
+          return buffer[p];
+        }
+
+        this.inputHexString = function(hexString) {
+          //some color shifting happens during the import. This is kind of a mess.
+          var hex = hexString;
+          var value;
+          for (var i = 0; i < buffer.length; i++) {
+            value = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+            buffer[i] = value;
+          }
+          redrawCanvasFromBuffer();
+        }
+
+        function redrawCanvasFromBuffer() {
+          var row, col, colorString, r, g, b;
+          for (var i = 0; i < buffer.length; i++) {
+            col = Math.floor(i / canvasRows);
+            row = i % canvasRows;
+
+            r = buffer[i] & 0b11100000;
+            g = (buffer[i] & 0b00011100) << 3;
+            b = (buffer[i] & 0b00000011) << 6;
+            colorString = '#' + padHex(r) + padHex(g) + padHex(b);
+            Pixels.setDrawColor(colorString);
+            setPixel(row, col);
           }
         }
+
+        function setPixel(row, col) {
+          var p = row + col * canvasRows;
+          buffer[p] = color24To8Bit(drawColor);
+          ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);     
+        }
+
+        function handleMove(evt) {
+          if (drawing) {
+            var row, col, mouse;
+            mouse = getMousePos(canvas, evt);
+
+            col = Math.floor(mouse.x / pixelSize);
+            row = Math.floor(mouse.y / pixelSize);
+
+            setPixel(row, col);
+          }
+        }
+
+        function handleMouseUp(evt) {
+          drawing = false;
+        }
+
+        function handleMouseDown(evt) {
+          var row, col;
+          var mouse = getMousePos(canvas, evt);
+
+          col = Math.floor(mouse.x / pixelSize);
+          row = Math.floor(mouse.y / pixelSize);
+
+          drawing = true;
+
+          setPixel(row, col);
+        }
+
+        canvas.addEventListener("mousemove", handleMove);
+        canvas.addEventListener("mousedown", handleMouseDown, false);
+        canvas.addEventListener("mouseup", handleMouseUp);
+        canvas.addEventListener("touchmove", handleMove);
+        canvas.addEventListener("touchstart", handleMouseDown);
+        canvas.addEventListener("touchend", handleMouseUp);                
       }
 
-      function getMousePos(canvas, evt) {
-        var rect = canvas.getBoundingClientRect();
-        var xPos = evt.clientX - rect.left;
-        var yPos = evt.clientY - rect.top;
+      function ColorPicker(numColors, picker) {
+        //TODO: try an indexed color palette suitable for actual LED values
+        //also gamma correction??
+        var picker = picker;
+        var palette = document.getElementById("palette");
+        var inUsePalette = document.getElementById("colorsInUse")
+        var setBorder = createBorderPatrol();
+
+        function createBorderPatrol() {
+          var lastElement;
+          var currentElement;
+
+          return function(element) {
+            if (this.currentElement) {
+              this.lastElement = this.currentElement;
+              this.lastElement.style.borderColor = this.lastElement.id;
+            }
+            this.currentElement = element;
+            this.currentElement.style.borderColor = "#000000";
+          }
+        }
+
+        function displayDrawColor(color) {
+          document.getElementById("currentColorSwatch").style.backgroundColor = color;
+        }
+
+
+        function populateColorPalette() {
+          var index = 0;
+          var row;
+
+          for (var r = 0; r < 255; r+= 37) {
+            for (var g = 0; g < 255; g+= 37) {
+              for (var b = 0; b < 255; b+= 85) {
+                var color = '#' + padHex(r) + padHex(g) + padHex(b);
+                var e;
+                if (index % 21 == 0){
+                  row = document.createElement("tr");
+                  palette.appendChild(row);
+                  index++;
+                } else {
+                  e = document.createElement("td");
+                  row.appendChild(e);
+                  e.id = color;
+                  e.setAttribute("style", "margin: 0px; border: 2px solid " + color + "; padding: 0px; width: 20px; height: 20px; background-color: " + color);
+                  e.addEventListener("mousedown", pickerMouseDown);
+                  index++;
+                }
+              }
+            }
+          }        
+        }
+
+        function pickerMouseDown(evt) {
+          eraseSelected = false;
+          drawSelected = true;
+          drawColor = evt.srcElement.id;
+          Pixels.setDrawColor(drawColor);
+          displayDrawColor(drawColor);
+          setBorder(evt.srcElement);
+        }
+
+        populateColorPalette();                
+      }
+
+      function uploadPixels(pixelArray) {
+        var httpRequest = new XMLHttpRequest();
+        httpRequest.onreadystatechange = function() {
+          if (httpRequest.readyState === XMLHttpRequest.DONE) {
+            if (httpRequest.status === 200) {
+              //console.log(httpRequest.responseText);
+            } else {
+              //console.log('There was a problem with the request.');
+            }
+          }
+        }; 
+        console.log(Pixels.outputHexString());
+        httpRequest.open('POST', 'upload');
+        httpRequest.send('rows=10&cols=30&pixels=' + Pixels.outputHexString());
+
+      };
+
+      function getMousePos(element, evt) {
+        var rect = element.getBoundingClientRect();
+        var xPos, yPos;
+        //handle touchscreens, too - this check might not work across browsers?
+        if (evt.clientX) {
+          xPos = evt.clientX;
+          yPos = evt.clientY;
+        } else {
+          xPos = evt.touches[0].clientX;
+          yPos = evt.touches[0].clientY;
+        }
+        xPos -= rect.left;
+        yPos -= rect.top;
         return {x : xPos, y : yPos};
       }
 
@@ -63,135 +263,32 @@
         return paddedNum;
       }
 
-      Pixels.toHexString = function(){
-        var hexString = '';
-        for (var i = 0; i < this.length; i++) {
-          hexString += padHex(this[i]);
-        }
-        return hexString;
+      function color8to24bit(color) {
+        var red = color & 0b11100000 << 21;
+        var green = color & 0b00011100 << 13;
+        var blue = color & 0b00000011 << 6;
+        var color24 = red | green | blue;
+        return color24;
       }
 
-      Pixels.getPixel = function(row, col) {
-
-      };
-
-      Pixels.setPixel = function(row, col, color) {
-        var p = row + col * canvasRows;
-
-        if (color === 0) {
-          Pixels[p] = 0;
-          ctx.fillStyle = eraseColor;
-          ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
-        } else {
-          Pixels[p] = convertTo8Bit(color);
-          ctx.fillStyle = drawColor;
-          ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+      function color24To8Bit(color) {
+        if (typeof color === 'string') {
+          var color = parseInt(color.replace(/^#/, ''), 16);
         }
-      };
-
-      function convertTo8Bit(color) {
-        var color = parseInt(color.replace(/^#/, ''), 16);
         var red = color >> 21;
         var green = color >> 13 & 0x07;
         var blue = color >> 6 & 0x03;
-        var color8Bit = (red << 5) | (green << 2) | blue;
-        return color8Bit;
+        var color8 = (red << 5) | (green << 2) | blue;
+        return color8;
       }
 
-      function handleMove(evt) {
-        var row, col;
-        var mouse = getMousePos(canvas, evt);
+      var Pixels = new Pixels(20, 30, canvas);
+      var Picker = new ColorPicker(256, document.getElementById("colorPicker"));
 
-        col = Math.floor(mouse.x / pixelSize);
-        row = Math.floor(mouse.y / pixelSize);
+      document.getElementById("uploadButton").onclick = function() {
+        uploadPixels();
+      };
 
-        if (erasing) {
-          Pixels.setPixel(row, col, 0);
-        }
-        if (drawing) {
-          Pixels.setPixel(row, col, drawColor);
-        }
-
-      }
-
-      function handleMouseUp(evt) {
-        drawing = false;
-        erasing = false;        
-      }
-
-      function handleMouseDown(evt) {
-        //evt contains clientX and clientY- replace getMousePos???
-        var row, col;
-        var mouse = getMousePos(canvas, evt);
-
-        col = Math.floor(mouse.x / pixelSize);
-        row = Math.floor(mouse.y / pixelSize);
-
-        if (eraseSelected) {
-          erasing = true;
-          drawing = false;
-          Pixels.setPixel(row, col, 0);
-        } 
-        if (drawSelected) {
-          drawing = true;
-          erasing = false;
-          Pixels.setPixel(row, col, drawColor);
-        }       
-      }
-
-      var createBorderPatrol = function() {
-        var lastElement;
-        var currentElement;
-
-        return function(element) {
-          if (this.currentElement) {
-            this.lastElement = this.currentElement;
-            this.lastElement.style.borderColor = this.lastElement.id;
-          }
-          this.currentElement = element;
-          this.currentElement.style.borderColor = "#000000";
-        }
-      }
-      var setBorder = createBorderPatrol();
-
-      function pickerMouseDown(evt) {
-        eraseSelected = false;
-        drawSelected = true;
-        drawColor = evt.srcElement.id;
-        setBorder(evt.srcElement);
-      }
-
-      var colorPicker = document.getElementById("colorPicker");
-      //TODO: try an indexed color palette suitable for actual LED values
-      //also gamma correction??
-      function createColorPicker(colors, parent) {
-        this.parent = parent;
-        this.numColors = colors;
-        var color;
-
-        for (var r = 0; r < 255; r+= 37) {
-          for (var g = 0; g < 255; g+= 37) {
-            for (var b = 0; b < 255; b+= 85) {
-              color = '#' + padHex(r) + padHex(g) + padHex(b);
-              var e = document.createElement("div");
-              e.id = color;
-              e.setAttribute("style", "margin: 0px; border: 2px solid " + color + "; padding: 0px; display: inline-block; width: 20px; height: 20px; background-color: " + color);
-              e.addEventListener("mousedown", pickerMouseDown);
-              parent.appendChild(e);
-            }
-          }
-        }        
-      }
-
-      createColorPicker(256, colorPicker);
-
-      canvas.addEventListener("mousemove", handleMove);
-      canvas.addEventListener("mousedown", handleMouseDown, false);
-      canvas.addEventListener("mouseup", handleMouseUp);
-      //these don't work yet
-      canvas.addEventListener("touchmove", function(){console.log('hi');});
-      canvas.addEventListener("touchstart", handleMouseDown);
-      canvas.addEventListener("touchend", handleMouseUp);
 
 
     </script>
