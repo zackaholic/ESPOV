@@ -6,25 +6,30 @@
 #include "FS.h"
 #include <stdlib.h>
 
-#define NUMPIXELS 10 // Number of LEDs in strip
+#define NUMPIXELS 15 // Number of LEDs in strip
 //pixel dimensions of display
-uint8_t height = 10;
-uint8_t width = 30;
-
+int height;
+int width;
+uint8_t image_received = 0;
+Adafruit_DotStar strip = Adafruit_DotStar(0, DOTSTAR_BGR);
 // Here's how to control the LEDs from any two pins:
 //#define DATAPIN    4
 //#define CLOCKPIN   5
 //Adafruit_DotStar strip = Adafruit_DotStar(NUMPIXELS, DATAPIN, CLOCKPIN, DOTSTAR_BRG);
 
+extern "C" {
+  #include "user_interface.h"
+}
+
 //hardware spi:
-Adafruit_DotStar strip = Adafruit_DotStar(height, DOTSTAR_BGR);
+//Adafruit_DotStar strip = Adafruit_DotStar(height, DOTSTAR_BGR);
 
 const byte DNS_PORT = 53;
 IPAddress apIP(192, 168, 1, 1);
 DNSServer dnsServer;
 ESP8266WebServer server(80);
 
-uint8_t pixelArray[300];
+uint8_t pixelArray[600];
 
 void handleRoot() {
   File root = SPIFFS.open("/uploadTool.html", "r");
@@ -34,7 +39,7 @@ void handleRoot() {
   }
   String html = root.readString();
   root.close();
-
+  
   server.send(200, "text/html", html);
 }
 
@@ -42,16 +47,26 @@ void handleUpload() {
   height = server.arg("rows").toInt();
   width = server.arg("cols").toInt();
   String pixelData = server.arg("pixels");
-
+  
+  if (!image_received) {
+    image_received = 1;
+    strip = Adafruit_DotStar(height, DOTSTAR_BGR);
+    strip.begin(); // Initialize pins for output
+    strip.show();  // Turn all LEDs off ASAP    
+  }
   char numString[2];
   int index = 0;
   
-  for (int i = 0;  i < pixelData.length(); i+=2) {
+  for (int i = 0;  i < sizeof(pixelArray); i+=2) {
       numString[0] = pixelData.charAt(i);
       numString[1] = pixelData.charAt(i + 1);
       pixelArray[index] = (uint8_t)(strtol(numString, NULL, 16));
       index++;
     }
+    for (int i = 0; i < 300; i++) {
+      Serial.print(pixelArray[i]);
+    }
+  
   //have to send a response so client doesn't hang
   server.send(200, "text/plain", "ok");
 }
@@ -68,7 +83,6 @@ void pushPixelColumn(int col, int len) {
   uint32_t red;
   uint32_t green;
   uint32_t blue;
-  //values 0-43 in pixelArray are 0
   for (i = 0; i < len; i++) {     
     red = pixelArray[startP + i] &   0b11100000;
     green = pixelArray[startP + i] & 0b00011100;
@@ -92,8 +106,8 @@ void setup(void){
 Serial.begin(115200);
 
 ///////////////////dotstar setup
-strip.begin(); // Initialize pins for output
-strip.show();  // Turn all LEDs off ASAP
+//strip.begin(); // Initialize pins for output
+//strip.show();  // Turn all LEDs off ASAP
 
 //////////////////////wifi setup
   WiFi.mode(WIFI_AP);
@@ -132,7 +146,9 @@ void loop(void){
 //yielding to firmware to service wifi routines seems to help reset problem
 //try implementing a state machine to switch b/t server and POV modes?
   delay(10); 
-  
-  servicePOV(10, width);
-  delay(20);
+
+  if (image_received) {
+    servicePOV(15, width);
+    delay(20);
+  }
 }
