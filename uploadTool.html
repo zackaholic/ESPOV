@@ -1,6 +1,7 @@
 <!DOCTYPE HTML>
 <html>
   <head>
+
   </head>
   <body id="page">
     <canvas id="myCanvas" width="900" height="600" style="touch-action: none; border:1px solid; background-color: #000000"></canvas>
@@ -45,21 +46,22 @@
         height:50px; 
         display:inline-block; 
         float:right; 
-        border:1px solid
+        border:1px solid;
+        margin: 2px;
       }
       #colorsInUse {
         width:130px; 
         height:130px; 
-        border:1px solid
+        border:1px solid;
+        margin: 2px;
       }
       #palette {
         width: 500px;
       }
     </style>
-
-    <script type="text/javascript">
+    <script type="text/javascript" defer>
       var canvas = document.getElementById('myCanvas');
-      var palette = document.getElementById('palette')
+      var colorPicker = document.getElementById('colorPicker')
 
       function Pixels(rows, cols, canvas) {
         var buffer = new Uint8Array(rows * cols);
@@ -160,6 +162,7 @@
       function ColorPicker(numColors, picker) {
         //TODO: try an indexed color palette suitable for actual LED values
         //also gamma correction??
+        var inUse = [];
         var picker = picker;
         var palette = document.getElementById("palette");
         var inUsePalette = document.getElementById("colorsInUse")
@@ -183,19 +186,39 @@
           document.getElementById("currentColorSwatch").style.backgroundColor = color;
         }
 
+        function updateColorsInUse(color) {
+          if (inUse.includes(color) || inUse.length == 25) {
+            return;
+          }
+          var usePalette = document.getElementById("colorsInUse");
+          var e = document.createElement("div");
+          usePalette.appendChild(e);
+          e.setAttribute("style", "margin: 1px; border: 2px solid " + color + 
+            "; padding: 0px; width: 20px; height: 20px; background-color: " + color +
+            "; display: inline-block; vertical-align: top");
+
+          inUse.push(color);
+
+        }
 
         function populateColorPalette() {
           var index = 0;
           var row;
 
-          for (var r = 0; r < 255; r+= 37) {
-            for (var g = 0; g < 255; g+= 37) {
+          for (var r = 0; r < 255; r+= 36) {
+            for (var g = 0; g < 255; g+= 36) {
               for (var b = 0; b < 255; b+= 85) {
                 var color = '#' + padHex(r) + padHex(g) + padHex(b);
                 var e;
-                if (index % 21 == 0){
+                if (index % 24 == 0){
                   row = document.createElement("tr");
                   palette.appendChild(row);
+                  e = document.createElement("td");
+                  row.appendChild(e);
+                  e.id = color;
+                  e.setAttribute("style", "margin: 0px; border: 2px solid " + color + "; padding: 0px; width: 20px; height: 20px; background-color: " + color);
+                  e.addEventListener("mousedown", pickerMouseDown);
+
                   index++;
                 } else {
                   e = document.createElement("td");
@@ -217,6 +240,7 @@
           Pixels.setDrawColor(drawColor);
           displayDrawColor(drawColor);
           setBorder(evt.srcElement);
+          updateColorsInUse(drawColor);
         }
 
         populateColorPalette();                
@@ -235,14 +259,14 @@
         }; 
         console.log(Pixels.outputHexString());
         httpRequest.open('POST', 'upload');
-        httpRequest.send('rows=10&cols=30&pixels=' + Pixels.outputHexString());
+        httpRequest.send('rows=20&cols=30&pixels=' + Pixels.outputHexString());
 
       };
 
       function getMousePos(element, evt) {
         var rect = element.getBoundingClientRect();
         var xPos, yPos;
-        //handle touchscreens, too - this check might not work across browsers?
+        //hacky way to handle touchscreens - this check might not work across browsers?
         if (evt.clientX) {
           xPos = evt.clientX;
           yPos = evt.clientY;
@@ -282,29 +306,15 @@
         return color8;
       }
 
-      var Pixels = new Pixels(20, 30, canvas);
-      var Picker = new ColorPicker(256, document.getElementById("colorPicker"));
+      var Pixels = new Pixels(10, 30, canvas);
+      var Picker = new ColorPicker(256, colorPicker);
 
       document.getElementById("uploadButton").onclick = function() {
         uploadPixels();
       };
-
-
-
     </script>
   </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
 
 
 
