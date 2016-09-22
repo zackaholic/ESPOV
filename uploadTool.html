@@ -10,7 +10,7 @@
      <h3>Upload</h3> 
     </div>
     <div id="colorPicker">
-      <div id="currentColorSwatch">
+      <div id="drawingColorSwatch">
       </div>
       <div id="colorsInUse">
       </div>
@@ -24,39 +24,50 @@
         height: 800px;
       }
       #uploadButton {
+        position: relative;
         cursor: pointer;
         border: 1px solid;
         background-color: #b3e7ff;
         width: 100px;
         height: 50px;
         display: inline-block;
-      }
-      #uploadButton h3 {
         font-family:Arial; 
         text-align:center;
+        border-radius: 4px;
       }
+      #uploadButton h3 {
+        position: absolute;
+        top: 50%;
+        margin: 0px;
+        left: 50%;
+        margin-right: 50%;
+        transform: translate(-50%, -50%);
+     }
       #colorPicker {
         touch-action: none; 
         display: inline-block; 
         float:right; 
         border:1px solid;
       }
-      #currentColorSwatch {
-        width:150px; 
+      #drawingColorSwatch {
+        width:130px; 
         height:50px; 
         display:inline-block; 
-        float:right; 
+        float:left; 
         border:1px solid;
         margin: 2px;
       }
       #colorsInUse {
-        width:130px; 
-        height:130px; 
+        width: 130px;
+        height: 130px;
         border:1px solid;
         margin: 2px;
+        float: left;
+        clear: left;
       }
       #palette {
         width: 500px;
+        position: relative;
       }
     </style>
     <script type="text/javascript" defer>
@@ -169,21 +180,34 @@
         var setBorder = createBorderPatrol();
 
         function createBorderPatrol() {
-          var lastElement;
-          var currentElement;
+          var lastElements;
+          var currentElements;
+          var picker = document.getElementById("colorPicker");
 
-          return function(element) {
-            if (this.currentElement) {
-              this.lastElement = this.currentElement;
-              this.lastElement.style.borderColor = this.lastElement.id;
+          var setBorder = function(color) {
+            if (this.currentElements) {
+              this.lastElements = this.currentElements;
+              if (this.lastElements.item(0)){
+                this.lastElements.item(0).style.borderColor = this.lastElements.item(0).className;
+              }
+              if (this.lastElements.item(1)){
+                this.lastElements.item(1).style.borderColor = this.lastElements.item(0).className;
+              }
             }
-            this.currentElement = element;
-            this.currentElement.style.borderColor = "#000000";
+            this.currentElements = document.getElementsByClassName(color);
+            if (this.currentElements.item(0)){
+              this.currentElements.item(0).style.borderColor = "#000000";
+            }
+            if (this.currentElements.item(1)){
+              this.currentElements.item(1).style.borderColor = "#000000";
+            }
+
           }
+          return setBorder;
         }
 
         function displayDrawColor(color) {
-          document.getElementById("currentColorSwatch").style.backgroundColor = color;
+          document.getElementById("drawingColorSwatch").style.backgroundColor = color;
         }
 
         function updateColorsInUse(color) {
@@ -193,10 +217,11 @@
           var usePalette = document.getElementById("colorsInUse");
           var e = document.createElement("div");
           usePalette.appendChild(e);
-          e.setAttribute("style", "margin: 1px; border: 2px solid " + color + 
-            "; padding: 0px; width: 20px; height: 20px; background-color: " + color +
+          e.className = color;
+          e.setAttribute("style", "margin: 1px; border: 2px solid #000000; padding: 0px; width: 20px; height: 20px; background-color: " + color +
             "; display: inline-block; vertical-align: top");
-
+          e.addEventListener("mousedown", pickerMouseDown);
+          e.addEventListener("mouseenter", pickerMouseOver);
           inUse.push(color);
 
         }
@@ -215,17 +240,20 @@
                   palette.appendChild(row);
                   e = document.createElement("td");
                   row.appendChild(e);
-                  e.id = color;
+                  e.className = color;
                   e.setAttribute("style", "margin: 0px; border: 2px solid " + color + "; padding: 0px; width: 20px; height: 20px; background-color: " + color);
                   e.addEventListener("mousedown", pickerMouseDown);
-
+                  e.addEventListener("mouseenter", pickerMouseOver);
+                  //check out MouseEvent.region()(returns id of hit region)
+                  //support undo/erase with MouseEvent.which()(returns button pressed)?
                   index++;
                 } else {
                   e = document.createElement("td");
                   row.appendChild(e);
-                  e.id = color;
+                  e.className = color;
                   e.setAttribute("style", "margin: 0px; border: 2px solid " + color + "; padding: 0px; width: 20px; height: 20px; background-color: " + color);
                   e.addEventListener("mousedown", pickerMouseDown);
+                  e.addEventListener("mouseenter", pickerMouseOver);
                   index++;
                 }
               }
@@ -236,14 +264,22 @@
         function pickerMouseDown(evt) {
           eraseSelected = false;
           drawSelected = true;
-          drawColor = evt.srcElement.id;
+          drawColor = evt.srcElement.className;
           Pixels.setDrawColor(drawColor);
           displayDrawColor(drawColor);
-          setBorder(evt.srcElement);
+          setBorder(evt.srcElement.className);
           updateColorsInUse(drawColor);
         }
+        function pickerMouseOver(evt) {
+          displayDrawColor(evt.srcElement.className);
+        }
+
+        document.getElementById("palette").addEventListener("mouseleave", function(evt) {
+          displayDrawColor(drawColor);
+        });
 
         populateColorPalette();                
+
       }
 
       function uploadPixels(pixelArray) {
@@ -257,7 +293,7 @@
             }
           }
         }; 
-        console.log(Pixels.outputHexString());
+        // console.log(Pixels.outputHexString());
         httpRequest.open('POST', 'upload');
         httpRequest.send('rows=20&cols=30&pixels=' + Pixels.outputHexString());
 
