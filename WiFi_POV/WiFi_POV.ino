@@ -155,7 +155,7 @@ void loop(void){
 
   if (image_received) {
     servicePOV(15, width);
-    delay(250); //2.5ms = 400hz :(
+    delayMicroseconds(2500); //2.5ms = 400hz
   } else {
     delay(20);
   }
