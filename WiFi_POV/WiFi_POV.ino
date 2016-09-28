@@ -6,7 +6,8 @@
 #include "FS.h"
 #include <stdlib.h>
 
-#define NUMPIXELS 15 // Number of LEDs in strip
+//#define NUMPIXELS 20 // Number of LEDs in strip
+#define DEBUG 0
 //pixel dimensions of display
 int height;
 int width;
@@ -57,14 +58,20 @@ void handleUpload() {
   char numString[2];
   int index = 0;
   
-  for (int i = 0;  i < sizeof(pixelArray); i+=2) {
+  for (int i = 0;  i < pixelData.length() - 1; i+=2) {
       numString[0] = pixelData.charAt(i);
       numString[1] = pixelData.charAt(i + 1);
       pixelArray[index] = (uint8_t)(strtol(numString, NULL, 16));
-      index++;
-    }
-    for (int i = 0; i < 300; i++) {
-      Serial.print(pixelArray[i]);
+      numString[0] = 0;
+      numString[1] = 0;
+      if (DEBUG) {
+        if (i % 40 == 0) {
+          Serial.println("-------");
+        } 
+        Serial.println(pixelArray[index]);
+      }
+      index++;      
+     
     }
   
   //have to send a response so client doesn't hang
@@ -72,21 +79,21 @@ void handleUpload() {
 }
 
 void handleNotFound(){
-  server.send(404, "text/plain", "not found");
+  server.send(404, "text/plain", "Go to <a href= \"http://www.pov.com\">www.pov.com</a>");
 }
 
 void pushPixelColumn(int col, int len) {
 //column(zero referenced), and vertical length of strip
   uint32_t color;
   int i;
-  int startP = col * len;
+  int startP = col * len + len - 1;
   uint32_t red;
   uint32_t green;
   uint32_t blue;
   for (i = 0; i < len; i++) {     
-    red = pixelArray[startP + i] &   0b11100000;
-    green = pixelArray[startP + i] & 0b00011100;
-    blue = pixelArray[startP + i] &  0b00000011;
+    red = pixelArray[startP - i] &   0b11100000;
+    green = pixelArray[startP - i] & 0b00011100;
+    blue = pixelArray[startP - i] &  0b00000011;
     color = (red << 16)|(green << 11)|(blue << 6);
     strip.setPixelColor(i, color);
   }
@@ -143,12 +150,13 @@ Serial.begin(115200);
 void loop(void){
   dnsServer.processNextRequest();
   server.handleClient();
-//yielding to firmware to service wifi routines seems to help reset problem
 //try implementing a state machine to switch b/t server and POV modes?
-  delay(10); 
+//  delay(10); 
 
   if (image_received) {
     servicePOV(15, width);
+    delay(250); //2.5ms = 400hz :(
+  } else {
     delay(20);
   }
 }

@@ -185,6 +185,7 @@
           var picker = document.getElementById("colorPicker");
 
           var setBorder = function(color) {
+            //what up with this funky logic?
             if (this.currentElements) {
               this.lastElements = this.currentElements;
               if (this.lastElements.item(0)){
@@ -224,6 +225,11 @@
           e.addEventListener("mouseenter", pickerMouseOver);
           inUse.push(color);
 
+        }
+
+        function correctGamma(val, max) {
+          var gamma = 1.5;
+          return max * Math.pow((val / max), 1 / gamma);
         }
 
         function populateColorPalette() {
@@ -296,7 +302,6 @@
         // console.log(Pixels.outputHexString());
         httpRequest.open('POST', 'upload');
         httpRequest.send('rows=20&cols=30&pixels=' + Pixels.outputHexString());
-
       };
 
       function getMousePos(element, evt) {
@@ -342,7 +347,7 @@
         return color8;
       }
 
-      var Pixels = new Pixels(10, 30, canvas);
+      var Pixels = new Pixels(20, 30, canvas);
       var Picker = new ColorPicker(256, colorPicker);
 
       document.getElementById("uploadButton").onclick = function() {
