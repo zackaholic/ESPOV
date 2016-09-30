@@ -30,7 +30,7 @@ IPAddress apIP(192, 168, 1, 1);
 DNSServer dnsServer;
 ESP8266WebServer server(80);
 
-uint8_t pixelArray[600];
+uint8_t pixelArray[1080];
 
 void handleRoot() {
   File root = SPIFFS.open("/uploadTool.html", "r");
