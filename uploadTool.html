@@ -103,7 +103,6 @@
         }
 
         this.inputHexString = function(hexString) {
-          //some color shifting happens during the import. This is kind of a mess.
           var hex = hexString;
           var value;
           for (var i = 0; i < buffer.length; i++) {
@@ -171,8 +170,6 @@
       }
 
       function ColorPicker(numColors, picker) {
-        //TODO: try an indexed color palette suitable for actual LED values
-        //also gamma correction??
         var inUse = [];
         var picker = picker;
         var palette = document.getElementById("palette");
@@ -236,10 +233,10 @@
           var index = 0;
           var row;
 
-          for (var r = 0; r < 255; r+= 36) {
-            for (var g = 0; g < 255; g+= 36) {
-              for (var b = 0; b < 255; b+= 85) {
-                var color = '#' + padHex(r) + padHex(g) + padHex(b);
+          for (var r = 0; r < 8; r++) {
+            for (var g = 0; g < 8; g++) {
+              for (var b = 0; b < 4; b++) {
+                var color = '#' + padHex(r << 5) + padHex(g << 5) + padHex(b << 6);
                 var e;
                 if (index % 24 == 0){
                   row = document.createElement("tr");
@@ -337,9 +334,7 @@
       }
 
       function color24To8Bit(color) {
-        if (typeof color === 'string') {
-          var color = parseInt(color.replace(/^#/, ''), 16);
-        }
+        var color = parseInt(color.replace(/^#/, ''), 16);        
         var red = color >> 21;
         var green = color >> 13 & 0x07;
         var blue = color >> 6 & 0x03;
