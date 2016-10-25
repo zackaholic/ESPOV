@@ -6,11 +6,11 @@
 #include "FS.h"
 #include <stdlib.h>
 
-//#define NUMPIXELS 20 // Number of LEDs in strip
+#define NUMPIXELS 36 // Number of LEDs in strip
 #define DEBUG 0
 //pixel dimensions of display
-int height;
-int width;
+int height = 36;
+int imgWidth;
 uint8_t image_received = 0;
 Adafruit_DotStar strip = Adafruit_DotStar(0, DOTSTAR_BGR);
 // Here's how to control the LEDs from any two pins:
@@ -45,9 +45,18 @@ void handleRoot() {
 }
 
 void handleUpload() {
-  height = server.arg("rows").toInt();
-  width = server.arg("cols").toInt();
-  String pixelData = server.arg("pixels");
+  String path = server.arg("name");
+  String recImage = server.arg("image");
+  File img = SPIFFS.open(path, "w+");
+  
+  img.print(recImage);
+  img.seek(0, SeekSet);
+  imgWidth = img.parseInt();
+  
+  for (int i = 0; i < imgWidth * NUMPIXELS; i++) {
+    pixelArray[i] = (uint8_t)img.parseInt();
+  }
+  img.close();
   
   if (!image_received) {
     image_received = 1;
@@ -55,25 +64,6 @@ void handleUpload() {
     strip.begin(); // Initialize pins for output
     strip.show();  // Turn all LEDs off ASAP    
   }
-  char numString[2];
-  int index = 0;
-  
-  for (int i = 0;  i < pixelData.length() - 1; i+=2) {
-      numString[0] = pixelData.charAt(i);
-      numString[1] = pixelData.charAt(i + 1);
-      pixelArray[index] = (uint8_t)(strtol(numString, NULL, 16));
-      numString[0] = 0;
-      numString[1] = 0;
-      if (DEBUG) {
-        if (i % 40 == 0) {
-          Serial.println("-------");
-        } 
-        Serial.println(pixelArray[index]);
-      }
-      index++;      
-     
-    }
-  
   //have to send a response so client doesn't hang
   server.send(200, "text/plain", "ok");
 }
@@ -154,7 +144,7 @@ void loop(void){
 //  delay(10); 
 
   if (image_received) {
-    servicePOV(15, width);
+    servicePOV(15, imgWidth);
     delayMicroseconds(2500); //2.5ms = 400hz
   } else {
     delay(20);
