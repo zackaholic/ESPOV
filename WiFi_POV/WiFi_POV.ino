@@ -52,13 +52,26 @@ void handleGetImageFiles() {
     fileList += dir.fileName();
     fileList += "\n";
   }
-  Serial.println("Files: ");
-  Serial.println(fileList);
   server.send(200, "text/plain", fileList);
 }
 
+void handleGetImage() {
+  String imagePath = server.arg("image");
+  String imageString = "";
+  for (int i = 0; i < 1080; i++) {
+    imageString += pixelArray[i];
+    imageString += ',';
+  }
+  loadImage(imagePath);
+  server.send(200, "text/plain", imageString);
+}
+
 void handleUpload() {
+  //freezes if filename is too long, freezes if too many files uploaded???
   String path = server.arg("name");
+  Serial.print(path);
+  Serial.print(" len: ");
+  Serial.println(path.length());
   String recImage = server.arg("image");
   File img = SPIFFS.open(path, "w+");
   
@@ -130,14 +143,12 @@ uint8_t loadImage(String path) {
 }
 
 void saveAsLastImage(String path) {
-  unsigned char fileName[80];
-  path.getBytes(fileName, 80);
-  //clear EEPROM
   for (int i = 0; i < 80; i++) {
-    EEPROM.write(i, 0);
-  }
-  for (int i = 0; i < 80; i++) {
-    EEPROM.write(i, fileName[i]);
+    if (i < path.length()){
+      EEPROM.write(i, path.charAt(i));
+    } else {
+      EEPROM.write(i, ' ');
+    }
   }
   EEPROM.commit();
 }
@@ -176,6 +187,7 @@ EEPROM.begin(80);
   server.on("/", handleRoot);
   server.on("/upload", handleUpload);
   server.on("/getImages", handleGetImageFiles);  
+  server.on("/getImage", handleGetImage);
   server.onNotFound(handleNotFound);
 
   server.begin();
