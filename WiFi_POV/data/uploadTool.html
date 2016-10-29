@@ -1,0 +1,100 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+  </head>
+  <body id="page">
+    <canvas id="myCanvas" width="900" height="600" style="touch-action: none; border:1px solid; background-color: #000000"></canvas>
+    <p></p>
+    <form>
+      <input type="text" name="fileName" id="fileNameField">
+      <div id="uploadButton">
+       <h3>Upload</h3> 
+      </div>
+    </form>
+    <div id="colorPicker">
+      <div id="drawingColorSwatch">
+      </div>
+      <div id="colorsInUse">
+      </div>
+      <table id="palette">
+      </table>
+    </div>
+    <div id="fileBrowser">
+      <form action="getImages">
+        <select name="files" id="fileDropdown">
+        </select>
+        <button type="button" id="submitDropdownFile">Submit</button>
+      </form>
+    </div>    
+    <style>
+      #page {
+        width: 900px;
+        height: 800px;
+      }
+      #fileBrowser {
+        position: relative;
+        width: 150px;
+      }
+      #uploadButton {
+        position: relative;
+        cursor: pointer;
+        border: 1px solid;
+        background-color: #b3e7ff;
+        width: 100px;
+        height: 50px;
+        display: inline-block;
+        font-family:Arial; 
+        text-align:center;
+        border-radius: 4px;
+      }
+      #uploadButton h3 {
+        position: absolute;
+        top: 50%;
+        margin: 0px;
+        left: 50%;
+        margin-right: 50%;
+        transform: translate(-50%, -50%);
+     }
+      #colorPicker {
+        touch-action: none; 
+        display: inline-block; 
+        float:right; 
+        border:1px solid;
+      }
+      #drawingColorSwatch {
+        width:130px; 
+        height:50px; 
+        display:inline-block; 
+        float:left; 
+        border:1px solid;
+        margin: 2px;
+      }
+      #colorsInUse {
+        width: 130px;
+        height: 130px;
+        border:1px solid;
+        margin: 2px;
+        float: left;
+        clear: left;
+      }
+      #palette {
+        width: 500px;
+        position: relative;
+      }
+    </style>
+    <script type="text/javascript" defer>
+var canvas=document.getElementById("myCanvas"),colorPicker=document.getElementById("colorPicker");
+function FileBrowser(){var a=document.getElementById("fileDropdown");this.submitFile=function(){var a=new XMLHttpRequest;a.onreadystatechange=function(){a.readyState===XMLHttpRequest.DONE&&200!==a.status&&console.log("Cannot get image")};a.open("POST","selectImage");a.send("anImage")};this.refreshFiles=function(){var c=new XMLHttpRequest,b="",f;c.onreadystatechange=function(){if(c.readyState===XMLHttpRequest.DONE)if(200===c.status){b=c.responseText;console.log("fileString: "+b);f=b.split("\n");console.log("images: "+
+f);for(var e=0;e<f.length;e++){var h=document.createElement("option");h.value=f[e].replace("/img/","");h.innerHTML=h.value;a.appendChild(h)}}else console.log("Unable to load file system")};c.open("POST","getImages");c.send("")}}
+function Pixels(a,c,b){function f(a,d){g[a+d*l]=color24To8Bit(r);k.fillRect(30*d,30*a,30,30)}function e(a){p&&(a=getMousePos(b,a),f(Math.floor(a.y/30),Math.floor(a.x/30)))}function h(a){p=!1}function m(a){var d;d=getMousePos(b,a);a=Math.floor(d.x/30);d=Math.floor(d.y/30);p=!0;f(d,a)}var g=new Uint8Array(a*c),k=b.getContext("2d"),l=a,q=c,p,r;this.generateUploadString=function(a){a="name=/img/"+a+".txt&image="+this.getImgWidth()+"\n";for(var d="",b=0;b<q*l;b++)d+=g[b],d+=",";return a+d};this.getImgWidth=
+function(){return q};this.setImgWidth=function(a){q=a};this.setDrawColor=function(a){r=a;k.fillStyle=a};this.getPixelBuffer=function(){return g};this.getPixel=function(a,d){return g[a+d*l]};this.inputHexString=function(a){for(var d,b=0;b<g.length;b++)d=parseInt(a.slice(2*b,2*b+2),16),g[b]=d;for(var k,c,e,b=0;b<g.length;b++)d=Math.floor(b/l),a=b%l,k=g[b]&224,c=(g[b]&28)<<3,e=(g[b]&3)<<6,k="#"+padHex(k)+padHex(c)+padHex(e),Pixels.setDrawColor(k),f(a,d)};b.addEventListener("mousemove",e);b.addEventListener("mousedown",
+m,!1);b.addEventListener("mouseup",h);b.addEventListener("touchmove",e);b.addEventListener("touchstart",m);b.addEventListener("touchend",h)}
+function ColorPicker(a,c){function b(a){document.getElementById("drawingColorSwatch").style.backgroundColor=a}function f(a){eraseSelected=!1;drawSelected=!0;drawColor=a.srcElement.className;Pixels.setDrawColor(drawColor);b(drawColor);g(a.srcElement.className);a=drawColor;if(!h.includes(a)&&25!=h.length){var c=document.getElementById("colorsInUse"),k=document.createElement("div");c.appendChild(k);k.className=a;k.setAttribute("style","margin: 1px; border: 2px solid #000000; padding: 0px; width: 20px; height: 20px; background-color: "+
+a+"; display: inline-block; vertical-align: top");k.addEventListener("mousedown",f);k.addEventListener("mouseenter",e);h.push(a)}}function e(a){b(a.srcElement.className)}var h=[],m=document.getElementById("palette");document.getElementById("colorsInUse");var g=function(){document.getElementById("colorPicker");return function(a){this.currentElements&&(this.lastElements=this.currentElements,this.lastElements.item(0)&&(this.lastElements.item(0).style.borderColor=this.lastElements.item(0).className),
+this.lastElements.item(1)&&(this.lastElements.item(1).style.borderColor=this.lastElements.item(0).className));this.currentElements=document.getElementsByClassName(a);this.currentElements.item(0)&&(this.currentElements.item(0).style.borderColor="#000000");this.currentElements.item(1)&&(this.currentElements.item(1).style.borderColor="#000000")}}();document.getElementById("palette").addEventListener("mouseleave",function(a){b(drawColor)});(function(){for(var a=0,b,c=0;8>c;c++)for(var g=0;8>g;g++)for(var h=
+0;4>h;h++){var n="#"+padHex(c<<5)+padHex(g<<5)+padHex(h<<6),d;0==a%24&&(b=document.createElement("tr"),m.appendChild(b));d=document.createElement("td");b.appendChild(d);d.className=n;d.setAttribute("style","margin: 0px; border: 2px solid "+n+"; padding: 0px; width: 20px; height: 20px; background-color: "+n);d.addEventListener("mousedown",f);d.addEventListener("mouseenter",e);a++}})()}
+function uploadPixels(a){a=new XMLHttpRequest;a.onreadystatechange=function(){};var c=document.getElementById("fileNameField").value;console.log(Pixels.generateUploadString(c));a.open("POST","upload");a.send(Pixels.generateUploadString(c))}function getMousePos(a,c){var b=a.getBoundingClientRect(),f,e;c.clientX?(f=c.clientX,e=c.clientY):(f=c.touches[0].clientX,e=c.touches[0].clientY);f-=b.left;e-=b.top;return{x:f,y:e}}function padHex(a){a=a.toString(16);return 1==a.length?"0"+a:a}
+function color8to24bit(a){return a&469762048|a&229376|a&192}function color24To8Bit(a){a=parseInt(a.replace(/^#/,""),16);return a>>21<<5|(a>>13&7)<<2|a>>6&3}var Pixels=new Pixels(36,30,canvas),Picker=new ColorPicker(256,colorPicker),FBrowser=new FileBrowser;try{FBrowser.refreshFiles()}catch(a){console.log("Can't refresh files")}document.getElementById("uploadButton").onclick=function(){uploadPixels()};document.getElementById("submitDropdownFile").onclick=function(a){FBrowser.submitFile()};
+    </script>
+  </body>
+</html>

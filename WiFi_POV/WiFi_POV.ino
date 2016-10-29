@@ -41,8 +41,20 @@ void handleRoot() {
   }
   String html = root.readString();
   root.close();
-  
+
   server.send(200, "text/html", html);
+}
+
+void handleGetImageFiles() {
+  String fileList = "";
+  Dir dir = SPIFFS.openDir("/img");
+  while (dir.next()) {
+    fileList += dir.fileName();
+    fileList += "\n";
+  }
+  Serial.println("Files: ");
+  Serial.println(fileList);
+  server.send(200, "text/plain", fileList);
 }
 
 void handleUpload() {
@@ -61,12 +73,12 @@ void handleUpload() {
   }
   img.close();
   
-  if (!image_received) {
-    image_received = 1;
+  // if (!image_received) {
+  //   image_received = 1;
 //    strip = Adafruit_DotStar(height, DOTSTAR_BGR);
 //    strip.begin(); // Initialize pins for output
 //    strip.show();  // Turn all LEDs off ASAP    
-  }
+  // }
   //have to send a response so client doesn't hang
   server.send(200, "text/plain", "ok");
 }
@@ -163,6 +175,7 @@ EEPROM.begin(80);
   
   server.on("/", handleRoot);
   server.on("/upload", handleUpload);
+  server.on("/getImages", handleGetImageFiles);  
   server.onNotFound(handleNotFound);
 
   server.begin();
