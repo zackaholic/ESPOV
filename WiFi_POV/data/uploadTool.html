@@ -1,430 +1,407 @@
 <!DOCTYPE HTML>
-<html>
-  <head>
-  </head>
-  <body id="page">
-    <canvas id="myCanvas" width="900" height="600" style="touch-action: none; border:1px solid; background-color: #000000"></canvas>
-    <p></p>
-    <form>
-      <input type="text" name="fileName" id="fileNameField">
-      <div id="uploadButton">
-       <h4>Upload</h4> 
-      </div>
-    </form>
-    <div id="colorPicker">
-      <div id="drawingColorSwatch">
-      </div>
-      <div id="colorsInUse">
-      </div>
-      <table id="palette">
-      </table>
-    </div>
-    <div id="fileBrowser">
-      <form action="getImages">
-        <select name="files" id="fileDropdown">
-        </select>
-        <button type="button" id="submitDropdownFile">Select</button>
-      </form>
-    </div>    
-    <style>
-      #page {
-        width: 900px;
-        height: 800px;
+ <html>
+   <head>
+   </head>
+   <body id="page">
+     <canvas id="myCanvas" width="900" height="600" style="touch-action: none; border:1px solid; background-color: #000000"></canvas>
+     <p></p>
+     <form>
+       <input type="text" name="fileName" id="fileNameField">
+       <div id="uploadButton">
+        <h4>Upload</h4> 
+       </div>
+     </form>
+     <div id="colorPicker">
+       <div id="drawingColorSwatch">
+       </div>
+       <div id="colorsInUse">
+       </div>
+       <table id="palette">
+       </table>
+     </div>
+     <div id="fileBrowser">
+       <form action="getImages">
+         <select name="files" id="fileDropdown">
+         </select>
+         <button type="button" id="submitDropdownFile">Select</button>
+       </form>
+     </div>    
+     <style>
+       #page {
+         width: 900px;
+         height: 800px;
+       }
+       #fileBrowser {
+         position: relative;
+         width: 150px;
+       }
+       #uploadButton {
+         position: relative;
+         cursor: pointer;
+         border: 1px solid;
+         background-color: #b3e7ff;
+         width: 75px;
+         height: 35px;
+         display: inline-block;
+         font-family:Arial; 
+         text-align:center;
+         border-radius: 4px;
+       }
+       #uploadButton h4 {
+         position: absolute;
+         top: 50%;
+         margin: 0px;
+         left: 50%;
+         margin-right: 50%;
+         transform: translate(-50%, -50%);
       }
-      #fileBrowser {
-        position: relative;
-        width: 150px;
-      }
-      #uploadButton {
-        position: relative;
-        cursor: pointer;
-        border: 1px solid;
-        background-color: #b3e7ff;
-        width: 75px;
-        height: 35px;
-        display: inline-block;
-        font-family:Arial; 
-        text-align:center;
-        border-radius: 4px;
-      }
-      #uploadButton h4 {
-        position: absolute;
-        top: 50%;
-        margin: 0px;
-        left: 50%;
-        margin-right: 50%;
-        transform: translate(-50%, -50%);
-     }
-      #colorPicker {
-        touch-action: none; 
-        display: inline-block; 
-        float:right; 
-        border:1px solid;
-      }
-      #drawingColorSwatch {
-        width:130px; 
-        height:50px; 
-        display:inline-block; 
-        float:left; 
-        border:1px solid;
-        margin: 2px;
-      }
-      #colorsInUse {
-        width: 130px;
-        height: 130px;
-        border:1px solid;
-        margin: 2px;
-        float: left;
-        clear: left;
-      }
-      #palette {
-        width: 500px;
-        position: relative;
-      }
-    </style>
-    <script type="text/javascript" defer>
-      var canvas = document.getElementById('myCanvas');
-      var colorPicker = document.getElementById('colorPicker')
-<<<<<<< HEAD:WiFi_POV/data/uploadTool.html
-=======
-
->>>>>>> b327d73375c72ba5f858cb7d4e31fd120eb31485:WiFi_POV/data/uploadTool.html
-      function FileBrowser() {
-        var fileList = document.getElementById('fileDropdown');
-  
-        this.submitFile = function(file) {
-          console.log(file);
-          var httpRequest = new XMLHttpRequest();          
-          var image;
-          httpRequest.onreadystatechange = function() {
-            if (httpRequest.readyState === XMLHttpRequest.DONE) {
-              if (httpRequest.status === 200) {
-                image = httpRequest.responseText;
-                console.log(image);
-              } else {
-                console.log('Request failed');
-              }
-            }
-          }; 
-          httpRequest.open('POST', 'getImage');
-          httpRequest.send('image=' + file);          
-        };
-<<<<<<< HEAD:WiFi_POV/data/uploadTool.html
-=======
-
->>>>>>> b327d73375c72ba5f858cb7d4e31fd120eb31485:WiFi_POV/data/uploadTool.html
-        this.refreshFiles = function() {
-          var httpRequest = new XMLHttpRequest();
-          var fileString = '';
-          var images;
-<<<<<<< HEAD:WiFi_POV/data/uploadTool.html
-=======
-
->>>>>>> b327d73375c72ba5f858cb7d4e31fd120eb31485:WiFi_POV/data/uploadTool.html
-          httpRequest.onreadystatechange = function() {
-            if (httpRequest.readyState === XMLHttpRequest.DONE) {
-              if (httpRequest.status === 200) {
-                fileString = httpRequest.responseText;
-                console.log('fileString: ' + fileString);
-                images = fileString.split('\n');
-                console.log('images: ' + images);
-                for (var i = 0; i < images.length; i++) {
-                  var option = document.createElement('option');
-                  option.value = images[i];
-                  option.innerHTML = option.value.replace('/img/', '');
-                  fileList.appendChild(option);  
-                }                
-              } else {
-                console.log('Unable to load file system');
-              }
-            }
-          }; 
-          httpRequest.open('POST', 'getImages');
-          httpRequest.send('');
-        }
-      }
-<<<<<<< HEAD:WiFi_POV/data/uploadTool.html
-=======
-
->>>>>>> b327d73375c72ba5f858cb7d4e31fd120eb31485:WiFi_POV/data/uploadTool.html
-      function Pixels(rows, cols, canvas) {
-        var buffer = new Uint8Array(rows * cols);
-        var canvas = canvas;
-        var ctx = canvas.getContext('2d');
-        var pixelSize = 30;
-        var canvasRows = rows;
-        var imgWidth = cols; //display width measured in 'pov pixels' (not screen pixels)
-        var canvasColumns = cols;
-        var drawing;
-        var drawColor;
-        this.generateUploadString = function(fileName) {
-          var imgString = 'name=' + '/img/' + fileName  + '.txt' + '&image=' + 
-            this.getImgWidth() + '\n' + pixelsToString();
-          return imgString;
-        }
-        this.getImgWidth = function() {
-          return imgWidth;
-        }
-        this.setImgWidth = function(pixels) {
-          //size in pov displayed pixels
-          imgWidth = pixels;  
-        }
-        this.setDrawColor = function(color) {
-          drawColor = color;
-          ctx.fillStyle = color;
-        }
-        var pixelsToString = function() {
-          var pixelString = '';
-          for (var i = 0; i < imgWidth * canvasRows; i++) {
-            pixelString += buffer[i];
-            pixelString += ',';
-          }
-          return pixelString;
-        }
-        this.getPixelBuffer = function() {
-          return buffer;
-        }
-        this.getPixel = function(row, col) {
-          var p = row + col * canvasRows;
-          return buffer[p];
-        }
-        this.inputHexString = function(hexString) {
-          var hex = hexString;
-          var value;
-          for (var i = 0; i < buffer.length; i++) {
-            value = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-            buffer[i] = value;
-          }
-          redrawCanvasFromBuffer();
-        }
-        function redrawCanvasFromBuffer() {
-          var row, col, colorString, r, g, b;
-          for (var i = 0; i < buffer.length; i++) {
-            col = Math.floor(i / canvasRows);
-            row = i % canvasRows;
-            r = buffer[i] & 0b11100000;
-            g = (buffer[i] & 0b00011100) << 3;
-            b = (buffer[i] & 0b00000011) << 6;
-            colorString = '#' + padHex(r) + padHex(g) + padHex(b);
-            Pixels.setDrawColor(colorString);
-            setPixel(row, col);
-          }
-        }
-        function setPixel(row, col) {
-          var p = row + col * canvasRows;
-          buffer[p] = color24To8Bit(drawColor);
-          ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);     
-        }
-        function handleMove(evt) {
-          if (drawing) {
-            var row, col, mouse;
-            mouse = getMousePos(canvas, evt);
-            col = Math.floor(mouse.x / pixelSize);
-            row = Math.floor(mouse.y / pixelSize);
-            setPixel(row, col);
-          }
-        }
-        function handleMouseUp(evt) {
-          drawing = false;
-        }
-        function handleMouseDown(evt) {
-          var row, col;
-          var mouse = getMousePos(canvas, evt);
-          col = Math.floor(mouse.x / pixelSize);
-          row = Math.floor(mouse.y / pixelSize);
-          drawing = true;
-          setPixel(row, col);
-        }
-        canvas.addEventListener("mousemove", handleMove);
-        canvas.addEventListener("mousedown", handleMouseDown, false);
-        canvas.addEventListener("mouseup", handleMouseUp);
-        canvas.addEventListener("touchmove", handleMove);
-        canvas.addEventListener("touchstart", handleMouseDown);
-        canvas.addEventListener("touchend", handleMouseUp);                
-      }
-      function ColorPicker(numColors, picker) {
-        var inUse = [];
-        var picker = picker;
-        var palette = document.getElementById("palette");
-        var inUsePalette = document.getElementById("colorsInUse")
-        var setBorder = createBorderPatrol();
-        function createBorderPatrol() {
-          var lastElements;
-          var currentElements;
-          var picker = document.getElementById("colorPicker");
-          var setBorder = function(color) {
-            //whats up with this funky logic?
-            if (this.currentElements) {
-              this.lastElements = this.currentElements;
-              if (this.lastElements.item(0)){
-                this.lastElements.item(0).style.borderColor = this.lastElements.item(0).className;
-              }
-              if (this.lastElements.item(1)){
-                this.lastElements.item(1).style.borderColor = this.lastElements.item(0).className;
-              }
-            }
-            this.currentElements = document.getElementsByClassName(color);
-            if (this.currentElements.item(0)){
-              this.currentElements.item(0).style.borderColor = "#000000";
-            }
-            if (this.currentElements.item(1)){
-              this.currentElements.item(1).style.borderColor = "#000000";
-            }
-          }
-          return setBorder;
-        }
-        function displayDrawColor(color) {
-          document.getElementById("drawingColorSwatch").style.backgroundColor = color;
-        }
-        function updateColorsInUse(color) {
-          if (inUse.includes(color) || inUse.length == 25) {
-            return;
-          }
-          var usePalette = document.getElementById("colorsInUse");
-          var e = document.createElement("div");
-          usePalette.appendChild(e);
-          e.className = color;
-          e.setAttribute("style", "margin: 1px; border: 2px solid #000000; padding: 0px; width: 20px; height: 20px; background-color: " + color +
-            "; display: inline-block; vertical-align: top");
-          e.addEventListener("mousedown", pickerMouseDown);
-          e.addEventListener("mouseenter", pickerMouseOver);
-          inUse.push(color);
-        }
-        function correctGamma(val, max) {
-          var gamma = 1.5;
-          return max * Math.pow((val / max), 1 / gamma);
-        }
-        function populateColorPalette() {
-          var index = 0;
-          var row;
-          for (var r = 0; r < 8; r++) {
-            for (var g = 0; g < 8; g++) {
-              for (var b = 0; b < 4; b++) {
-                var color = '#' + padHex(r << 5) + padHex(g << 5) + padHex(b << 6);
-                var e;
-                if (index % 24 == 0){
-                  row = document.createElement("tr");
-                  palette.appendChild(row);
-                  e = document.createElement("td");
-                  row.appendChild(e);
-                  e.className = color;
-                  e.setAttribute("style", "margin: 0px; border: 2px solid " + color + "; padding: 0px; width: 20px; height: 20px; background-color: " + color);
-                  e.addEventListener("mousedown", pickerMouseDown);
-                  e.addEventListener("mouseenter", pickerMouseOver);
-                  //check out MouseEvent.region()(returns id of hit region)
-                  //support undo/erase with MouseEvent.which()(returns button pressed)?
-                  index++;
-                } else {
-                  e = document.createElement("td");
-                  row.appendChild(e);
-                  e.className = color;
-                  e.setAttribute("style", "margin: 0px; border: 2px solid " + color + "; padding: 0px; width: 20px; height: 20px; background-color: " + color);
-                  e.addEventListener("mousedown", pickerMouseDown);
-                  e.addEventListener("mouseenter", pickerMouseOver);
-                  index++;
-                }
-              }
-            }
-          }        
-        }
-        function pickerMouseDown(evt) {
-          eraseSelected = false;
-          drawSelected = true;
-          drawColor = evt.srcElement.className;
-          Pixels.setDrawColor(drawColor);
-          displayDrawColor(drawColor);
-          setBorder(evt.srcElement.className);
-          updateColorsInUse(drawColor);
-        }
-        function pickerMouseOver(evt) {
-          displayDrawColor(evt.srcElement.className);
-        }
-        document.getElementById("palette").addEventListener("mouseleave", function(evt) {
-          displayDrawColor(drawColor);
-        });
-        populateColorPalette();                
-      }
-      function uploadPixels(pixelArray) {
-        var fileName = document.getElementById("fileNameField").value;
-        if (fileName.length > 70) {
-          alert('File name must not exceed 70 characters');
-          return;
-        }        
-        var httpRequest = new XMLHttpRequest();
-        httpRequest.onreadystatechange = function() {
-          if (httpRequest.readyState === XMLHttpRequest.DONE) {
-            if (httpRequest.status === 200) {
-              console.log(httpRequest.responseText);
-            } else {
-              console.log(httpRequest.responseText);
-            }
-          }
-        }; 
-        console.log(Pixels.generateUploadString(fileName));
-        httpRequest.open('POST', 'upload');
-        httpRequest.send(Pixels.generateUploadString(fileName));
-      };
-      function getMousePos(element, evt) {
-        var rect = element.getBoundingClientRect();
-        var xPos, yPos;
-        //hacky way to detect touchscreens - this probably won't work across browsers?
-        if (evt.clientX) {
-          xPos = evt.clientX;
-          yPos = evt.clientY;
-        } else {
-          xPos = evt.touches[0].clientX;
-          yPos = evt.touches[0].clientY;
-        }
-        xPos -= rect.left;
-        yPos -= rect.top;
-        return {x : xPos, y : yPos};
-      }
-      function padHex(num) {
-        var paddedNum = num.toString(16);
-        if (paddedNum.length == 1) {
-          return '0' + paddedNum;
-        }
-        return paddedNum;
-      }
-      function color8to24bit(color) {
-        var red = color & 0b11100000 << 21;
-        var green = color & 0b00011100 << 13;
-        var blue = color & 0b00000011 << 6;
-        var color24 = red | green | blue;
-        return color24;
-      }
-      function color24To8Bit(color) {
-        var color = parseInt(color.replace(/^#/, ''), 16);        
-        var red = color >> 21;
-        var green = color >> 13 & 0x07;
-        var blue = color >> 6 & 0x03;
-        var color8 = (red << 5) | (green << 2) | blue;
-        return color8;
-      }
-      var Pixels = new Pixels(36, 30, canvas);
-      var Picker = new ColorPicker(256, colorPicker);
-      var FBrowser = new FileBrowser();
-      try {
-        FBrowser.refreshFiles();
-      }
-      catch(e) {
-        console.log("Can't refresh files");
-      }
-      
-      document.getElementById("uploadButton").onclick = function() {
-        uploadPixels();
-      };
-      document.getElementById("submitDropdownFile").onclick = function(e) {
-        var file = document.getElementById("fileDropdown").value;
-        FBrowser.submitFile(file);
-      };
-<<<<<<< HEAD:WiFi_POV/data/uploadTool.html
-    </script>
-  </body>
-</html>
-=======
-
-    </script>
-  </body>
-</html>
->>>>>>> b327d73375c72ba5f858cb7d4e31fd120eb31485:WiFi_POV/data/uploadTool.html
+       #colorPicker {
+         touch-action: none; 
+         display: inline-block; 
+         float:right; 
+         border:1px solid;
+       }
+       #drawingColorSwatch {
+         width:130px; 
+         height:50px; 
+         display:inline-block; 
+         float:left; 
+         border:1px solid;
+         margin: 2px;
+       }
+       #colorsInUse {
+         width: 130px;
+         height: 130px;
+         border:1px solid;
+         margin: 2px;
+         float: left;
+         clear: left;
+       }
+       #palette {
+         width: 500px;
+         position: relative;
+       }
+     </style>
+     <script type="text/javascript" defer>
+       var canvas = document.getElementById('myCanvas');
+       var colorPicker = document.getElementById('colorPicker')
+       function FileBrowser() {
+         var fileList = document.getElementById('fileDropdown');
+   
+         this.submitFile = function(file) {
+           console.log(file);
+           var httpRequest = new XMLHttpRequest();          
+           var image;
+           httpRequest.onreadystatechange = function() {
+             if (httpRequest.readyState === XMLHttpRequest.DONE) {
+               if (httpRequest.status === 200) {
+                 image = httpRequest.responseText;
+                 console.log(image);
+               } else {
+                 console.log('Request failed');
+               }
+             }
+           }; 
+           httpRequest.open('POST', 'getImage');
+           httpRequest.send('image=' + file);          
+         };
+         this.refreshFiles = function() {
+           var httpRequest = new XMLHttpRequest();
+           var fileString = '';
+           var images;
+           httpRequest.onreadystatechange = function() {
+             if (httpRequest.readyState === XMLHttpRequest.DONE) {
+               if (httpRequest.status === 200) {
+                 fileString = httpRequest.responseText;
+                 console.log('fileString: ' + fileString);
+                 images = fileString.split('\n');
+                 console.log('images: ' + images);
+                 for (var i = 0; i < images.length; i++) {
+                   var option = document.createElement('option');
+                   option.value = images[i];
+                   option.innerHTML = option.value.replace('/img/', '');
+                   fileList.appendChild(option);  
+                 }                
+               } else {
+                 console.log('Unable to load file system');
+               }
+             }
+           }; 
+           httpRequest.open('POST', 'getImages');
+           httpRequest.send('');
+         }
+       }
+       function Pixels(rows, cols, canvas) {
+         var buffer = new Uint8Array(rows * cols);
+         var canvas = canvas;
+         var ctx = canvas.getContext('2d');
+         var pixelSize = 30;
+         var canvasRows = rows;
+         var imgWidth = cols; //display width measured in 'pov pixels' (not screen pixels)
+         var canvasColumns = cols;
+         var drawing;
+         var drawColor;
+         this.generateUploadString = function(fileName) {
+           var imgString = 'name=' + '/img/' + fileName  + '.txt' + '&image=' + 
+             this.getImgWidth() + '\n' + pixelsToString();
+           return imgString;
+         }
+         this.getImgWidth = function() {
+           return imgWidth;
+         }
+         this.setImgWidth = function(pixels) {
+           //size in pov displayed pixels
+           imgWidth = pixels;  
+         }
+         this.setDrawColor = function(color) {
+           drawColor = color;
+           ctx.fillStyle = color;
+         }
+         var pixelsToString = function() {
+           var pixelString = '';
+           for (var i = 0; i < imgWidth * canvasRows; i++) {
+             pixelString += buffer[i];
+             pixelString += ',';
+           }
+           return pixelString;
+         }
+         this.getPixelBuffer = function() {
+           return buffer;
+         }
+         this.getPixel = function(row, col) {
+           var p = row + col * canvasRows;
+           return buffer[p];
+         }
+         this.inputHexString = function(hexString) {
+           var hex = hexString;
+           var value;
+           for (var i = 0; i < buffer.length; i++) {
+             value = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+             buffer[i] = value;
+           }
+           redrawCanvasFromBuffer();
+         }
+         function redrawCanvasFromBuffer() {
+           var row, col, colorString, r, g, b;
+           for (var i = 0; i < buffer.length; i++) {
+             col = Math.floor(i / canvasRows);
+             row = i % canvasRows;
+             r = buffer[i] & 0b11100000;
+             g = (buffer[i] & 0b00011100) << 3;
+             b = (buffer[i] & 0b00000011) << 6;
+             colorString = '#' + padHex(r) + padHex(g) + padHex(b);
+             Pixels.setDrawColor(colorString);
+             setPixel(row, col);
+           }
+         }
+         function setPixel(row, col) {
+           var p = row + col * canvasRows;
+           buffer[p] = color24To8Bit(drawColor);
+           ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);     
+         }
+         function handleMove(evt) {
+           if (drawing) {
+             var row, col, mouse;
+             mouse = getMousePos(canvas, evt);
+             col = Math.floor(mouse.x / pixelSize);
+             row = Math.floor(mouse.y / pixelSize);
+             setPixel(row, col);
+           }
+         }
+         function handleMouseUp(evt) {
+           drawing = false;
+         }
+         function handleMouseDown(evt) {
+           var row, col;
+           var mouse = getMousePos(canvas, evt);
+           col = Math.floor(mouse.x / pixelSize);
+           row = Math.floor(mouse.y / pixelSize);
+           drawing = true;
+           setPixel(row, col);
+         }
+         canvas.addEventListener("mousemove", handleMove);
+         canvas.addEventListener("mousedown", handleMouseDown, false);
+         canvas.addEventListener("mouseup", handleMouseUp);
+         canvas.addEventListener("touchmove", handleMove);
+         canvas.addEventListener("touchstart", handleMouseDown);
+         canvas.addEventListener("touchend", handleMouseUp);                
+       }
+       function ColorPicker(numColors, picker) {
+         var inUse = [];
+         var picker = picker;
+         var palette = document.getElementById("palette");
+         var inUsePalette = document.getElementById("colorsInUse")
+         var setBorder = createBorderPatrol();
+         function createBorderPatrol() {
+           var lastElements;
+           var currentElements;
+           var picker = document.getElementById("colorPicker");
+           var setBorder = function(color) {
+             //whats up with this funky logic?
+             if (this.currentElements) {
+               this.lastElements = this.currentElements;
+               if (this.lastElements.item(0)){
+                 this.lastElements.item(0).style.borderColor = this.lastElements.item(0).className;
+               }
+               if (this.lastElements.item(1)){
+                 this.lastElements.item(1).style.borderColor = this.lastElements.item(0).className;
+               }
+             }
+             this.currentElements = document.getElementsByClassName(color);
+             if (this.currentElements.item(0)){
+               this.currentElements.item(0).style.borderColor = "#000000";
+             }
+             if (this.currentElements.item(1)){
+               this.currentElements.item(1).style.borderColor = "#000000";
+             }
+           }
+           return setBorder;
+         }
+         function displayDrawColor(color) {
+           document.getElementById("drawingColorSwatch").style.backgroundColor = color;
+         }
+         function updateColorsInUse(color) {
+           if (inUse.includes(color) || inUse.length == 25) {
+             return;
+           }
+           var usePalette = document.getElementById("colorsInUse");
+           var e = document.createElement("div");
+           usePalette.appendChild(e);
+           e.className = color;
+           e.setAttribute("style", "margin: 1px; border: 2px solid #000000; padding: 0px; width: 20px; height: 20px; background-color: " + color +
+             "; display: inline-block; vertical-align: top");
+           e.addEventListener("mousedown", pickerMouseDown);
+           e.addEventListener("mouseenter", pickerMouseOver);
+           inUse.push(color);
+         }
+         function correctGamma(val, max) {
+           var gamma = 1.5;
+           return max * Math.pow((val / max), 1 / gamma);
+         }
+         function populateColorPalette() {
+           var index = 0;
+           var row;
+           for (var r = 0; r < 8; r++) {
+             for (var g = 0; g < 8; g++) {
+               for (var b = 0; b < 4; b++) {
+                 var color = '#' + padHex(r << 5) + padHex(g << 5) + padHex(b << 6);
+                 var e;
+                 if (index % 24 == 0){
+                   row = document.createElement("tr");
+                   palette.appendChild(row);
+                   e = document.createElement("td");
+                   row.appendChild(e);
+                   e.className = color;
+                   e.setAttribute("style", "margin: 0px; border: 2px solid " + color + "; padding: 0px; width: 20px; height: 20px; background-color: " + color);
+                   e.addEventListener("mousedown", pickerMouseDown);
+                   e.addEventListener("mouseenter", pickerMouseOver);
+                   //check out MouseEvent.region()(returns id of hit region)
+                   //support undo/erase with MouseEvent.which()(returns button pressed)?
+                   index++;
+                 } else {
+                   e = document.createElement("td");
+                   row.appendChild(e);
+                   e.className = color;
+                   e.setAttribute("style", "margin: 0px; border: 2px solid " + color + "; padding: 0px; width: 20px; height: 20px; background-color: " + color);
+                   e.addEventListener("mousedown", pickerMouseDown);
+                   e.addEventListener("mouseenter", pickerMouseOver);
+                    index++;
+                 }
+               }
+             }
+           }        
+         }
+         function pickerMouseDown(evt) {
+           eraseSelected = false;
+           drawSelected = true;
+           drawColor = evt.srcElement.className;
+           Pixels.setDrawColor(drawColor);
+           displayDrawColor(drawColor);
+           setBorder(evt.srcElement.className);
+           updateColorsInUse(drawColor);
+         }
+         function pickerMouseOver(evt) {
+           displayDrawColor(evt.srcElement.className);
+         }
+         document.getElementById("palette").addEventListener("mouseleave", function(evt) {
+           displayDrawColor(drawColor);
+         });
+         populateColorPalette();                
+       }
+       function uploadPixels(pixelArray) {
+         var fileName = document.getElementById("fileNameField").value;
+         if (fileName.length > 70) {
+           alert('File name must not exceed 70 characters');
+           return;
+         }        
+         var httpRequest = new XMLHttpRequest();
+         httpRequest.onreadystatechange = function() {
+           if (httpRequest.readyState === XMLHttpRequest.DONE) {
+             if (httpRequest.status === 200) {
+               console.log(httpRequest.responseText);
+             } else {
+               console.log(httpRequest.responseText);
+             }
+           }
+         }; 
+         console.log(Pixels.generateUploadString(fileName));
+         httpRequest.open('POST', 'upload');
+         httpRequest.send(Pixels.generateUploadString(fileName));
+       };
+       function getMousePos(element, evt) {
+         var rect = element.getBoundingClientRect();
+         var xPos, yPos;
+         //hacky way to detect touchscreens - this probably won't work across browsers?
+         if (evt.clientX) {
+           xPos = evt.clientX;
+           yPos = evt.clientY;
+         } else {
+           xPos = evt.touches[0].clientX;
+           yPos = evt.touches[0].clientY;
+         }
+         xPos -= rect.left;
+         yPos -= rect.top;
+         return {x : xPos, y : yPos};
+       }
+       function padHex(num) {
+         var paddedNum = num.toString(16);
+         if (paddedNum.length == 1) {
+           return '0' + paddedNum;
+         }
+         return paddedNum;
+       }
+       function color8to24bit(color) {
+         var red = color & 0b11100000 << 21;
+         var green = color & 0b00011100 << 13;
+         var blue = color & 0b00000011 << 6;
+         var color24 = red | green | blue;
+         return color24;
+       }
+       function color24To8Bit(color) {
+         var color = parseInt(color.replace(/^#/, ''), 16);        
+         var red = color >> 21;
+         var green = color >> 13 & 0x07;
+         var blue = color >> 6 & 0x03;
+         var color8 = (red << 5) | (green << 2) | blue;
+         return color8;
+       }
+       var Pixels = new Pixels(36, 30, canvas);
+       var Picker = new ColorPicker(256, colorPicker);
+       var FBrowser = new FileBrowser();
+       try {
+         FBrowser.refreshFiles();
+       }
+       catch(e) {
+         console.log("Can't refresh files");
+       }
+       
+       document.getElementById("uploadButton").onclick = function() {
+         uploadPixels();
+       };
+       document.getElementById("submitDropdownFile").onclick = function(e) {
+         var file = document.getElementById("fileDropdown").value;
+         FBrowser.submitFile(file);
+       };
+     </script>
+   </body>
+ </html>
