@@ -85,6 +85,10 @@
     <script type="text/javascript" defer>
       var canvas = document.getElementById('myCanvas');
       var colorPicker = document.getElementById('colorPicker')
+<<<<<<< HEAD:WiFi_POV/data/uploadTool.html
+=======
+
+>>>>>>> b327d73375c72ba5f858cb7d4e31fd120eb31485:WiFi_POV/data/uploadTool.html
       function FileBrowser() {
         var fileList = document.getElementById('fileDropdown');
   
@@ -105,10 +109,18 @@
           httpRequest.open('POST', 'getImage');
           httpRequest.send('image=' + file);          
         };
+<<<<<<< HEAD:WiFi_POV/data/uploadTool.html
+=======
+
+>>>>>>> b327d73375c72ba5f858cb7d4e31fd120eb31485:WiFi_POV/data/uploadTool.html
         this.refreshFiles = function() {
           var httpRequest = new XMLHttpRequest();
           var fileString = '';
           var images;
+<<<<<<< HEAD:WiFi_POV/data/uploadTool.html
+=======
+
+>>>>>>> b327d73375c72ba5f858cb7d4e31fd120eb31485:WiFi_POV/data/uploadTool.html
           httpRequest.onreadystatechange = function() {
             if (httpRequest.readyState === XMLHttpRequest.DONE) {
               if (httpRequest.status === 200) {
@@ -131,6 +143,10 @@
           httpRequest.send('');
         }
       }
+<<<<<<< HEAD:WiFi_POV/data/uploadTool.html
+=======
+
+>>>>>>> b327d73375c72ba5f858cb7d4e31fd120eb31485:WiFi_POV/data/uploadTool.html
       function Pixels(rows, cols, canvas) {
         var buffer = new Uint8Array(rows * cols);
         var canvas = canvas;
@@ -402,6 +418,13 @@
         var file = document.getElementById("fileDropdown").value;
         FBrowser.submitFile(file);
       };
+<<<<<<< HEAD:WiFi_POV/data/uploadTool.html
     </script>
   </body>
 </html>
+=======
+
+    </script>
+  </body>
+</html>
+>>>>>>> b327d73375c72ba5f858cb7d4e31fd120eb31485:WiFi_POV/data/uploadTool.html

@@ -224,4 +224,8 @@ void loop(void){
     servicePOV(15, imgWidth);
     delayMicroseconds(2500); //2.5ms = 400hz
 
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> b327d73375c72ba5f858cb7d4e31fd120eb31485
