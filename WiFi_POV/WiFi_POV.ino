@@ -5,14 +5,15 @@
 #include <ESP8266WebServer.h>
 #include "FS.h"
 #include <stdlib.h>
+#include <EEPROM.h>
 
-//#define NUMPIXELS 20 // Number of LEDs in strip
+#define NUMPIXELS 36 // Number of LEDs in strip
 #define DEBUG 0
 //pixel dimensions of display
-int height;
-int width;
+int height = 36;
+int imgWidth;
 uint8_t image_received = 0;
-Adafruit_DotStar strip = Adafruit_DotStar(0, DOTSTAR_BGR);
+Adafruit_DotStar strip = Adafruit_DotStar(NUMPIXELS, DOTSTAR_BGR);
 // Here's how to control the LEDs from any two pins:
 //#define DATAPIN    4
 //#define CLOCKPIN   5
@@ -40,46 +41,72 @@ void handleRoot() {
   }
   String html = root.readString();
   root.close();
-  
+
   server.send(200, "text/html", html);
 }
 
-void handleUpload() {
-  height = server.arg("rows").toInt();
-  width = server.arg("cols").toInt();
-  String pixelData = server.arg("pixels");
-  
-  if (!image_received) {
-    image_received = 1;
-    strip = Adafruit_DotStar(height, DOTSTAR_BGR);
-    strip.begin(); // Initialize pins for output
-    strip.show();  // Turn all LEDs off ASAP    
+void handleGetImageFiles() {
+  String fileList = "";
+  Dir dir = SPIFFS.openDir("/img");
+  while (dir.next()) {
+    fileList += dir.fileName();
+    fileList += "\n";
   }
-  char numString[2];
-  int index = 0;
+  server.send(200, "text/plain", fileList);
+}
+
+void handleGetImage() {
+  String imagePath = server.arg("image");
+  String imageString = "";
+  for (int i = 0; i < 1080; i++) {
+    imageString += pixelArray[i];
+    imageString += ',';
+  }
+  loadImage(imagePath);
+
+  Serial.print("Line 66 heap: ");
+  Serial.println(system_get_free_heap_size());
   
-  for (int i = 0;  i < pixelData.length() - 1; i+=2) {
-      numString[0] = pixelData.charAt(i);
-      numString[1] = pixelData.charAt(i + 1);
-      pixelArray[index] = (uint8_t)(strtol(numString, NULL, 16));
-      numString[0] = 0;
-      numString[1] = 0;
-      if (DEBUG) {
-        if (i % 40 == 0) {
-          Serial.println("-------");
-        } 
-        Serial.println(pixelArray[index]);
-      }
-      index++;      
-     
+  server.send(200, "text/plain", imageString);
+}
+
+void handleUpload() {
+  String path = server.arg("name");
+  String recImage = server.arg("image");
+  File img = SPIFFS.open(path, "w+");
+
+  if (!img) {
+    Serial.println("Failed to open file for writing");
+    return;
+  }
+
+  img.print(recImage);
+  img.seek(0, SeekSet);
+  imgWidth = img.parseInt();
+  long uploadBegin = millis();
+  uint8_t uploadSuccessful = 1;
+
+  for (int i = 0; i < imgWidth * NUMPIXELS; i++) {
+    pixelArray[i] = (uint8_t)img.parseInt();
+//    delay(1); 
+    if (millis() - uploadBegin > 5000) {
+      Serial.println("File read timed out");
+      uploadSuccessful = 0;
+      server.send(200, "text/plain", "upload failed");
+      //now clear array and reload previous image???
+      break;
     }
-  
-  //have to send a response so client doesn't hang
-  server.send(200, "text/plain", "ok");
+  }
+  img.close();
+  //only save ast last image on successful upload
+  if (uploadSuccessful) {
+    saveAsLastImage(path);
+    server.send(200, "text/plain", "ok");
+  }
 }
 
 void handleNotFound(){
-  server.send(404, "text/plain", "Go to <a href= \"http://www.pov.com\">www.pov.com</a>");
+  server.send(404, "text/html", "Go to <a href= \"http://www.pov.com\">www.pov.com</a>");
 }
 
 void pushPixelColumn(int col, int len) {
@@ -109,12 +136,45 @@ void servicePOV(int hertz, int width){
   }
 }
 
+uint8_t loadImage(String path) {
+  File img = SPIFFS.open(path, "r");
+  if (!img) {
+    Serial.print(path);
+    Serial.println(" does not appear to exist");
+    return 0;
+  }
+  imgWidth = img.parseInt();
+  for (int i = 0; i < imgWidth * NUMPIXELS; i++) {
+    pixelArray[i] = (uint8_t)img.parseInt();
+  }
+  img.close();
+  return 1;
+}
+
+void saveAsLastImage(String path) {
+  for (int i = 0; i < 80; i++) {
+    if (i < path.length()){
+      EEPROM.write(i, path.charAt(i));
+    } else {
+      EEPROM.write(i, ' ');
+    }
+  }
+  EEPROM.commit();
+}
+
+String getLastImage() {
+  char fileName[80];
+  for (int i = 0; i < 80; i++) {
+    fileName[i] = EEPROM.read(i);
+  }
+  String path = String(fileName);
+  path.trim();
+  return path;
+}
+
 void setup(void){
 Serial.begin(115200);
-
-///////////////////dotstar setup
-//strip.begin(); // Initialize pins for output
-//strip.show();  // Turn all LEDs off ASAP
+EEPROM.begin(80);
 
 //////////////////////wifi setup
   WiFi.mode(WIFI_AP);
@@ -135,6 +195,8 @@ Serial.begin(115200);
   
   server.on("/", handleRoot);
   server.on("/upload", handleUpload);
+  server.on("/getImages", handleGetImageFiles);  
+  server.on("/getImage", handleGetImage);
   server.onNotFound(handleNotFound);
 
   server.begin();
@@ -145,18 +207,21 @@ Serial.begin(115200);
   if (!SPIFFS.begin()) {
     Serial.println("Failed to mount file system");
   }
+
+///////////////////dotstar setup
+  strip.begin(); // Initialize pins for output
+  strip.show();  // Turn all LEDs off ASAP
+
+  loadImage(getLastImage());
 }
 
 void loop(void){
   dnsServer.processNextRequest();
   server.handleClient();
-//try implementing a state machine to switch b/t server and POV modes?
 //  delay(10); 
 
-  if (image_received) {
-    servicePOV(15, width);
+  
+    servicePOV(15, imgWidth);
     delayMicroseconds(2500); //2.5ms = 400hz
-  } else {
-    delay(20);
-  }
+
 }
