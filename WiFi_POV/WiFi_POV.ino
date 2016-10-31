@@ -63,41 +63,50 @@ void handleGetImage() {
     imageString += ',';
   }
   loadImage(imagePath);
+
+  Serial.print("Line 66 heap: ");
+  Serial.println(system_get_free_heap_size());
+  
   server.send(200, "text/plain", imageString);
 }
 
 void handleUpload() {
-  //freezes if filename is too long, freezes if too many files uploaded???
   String path = server.arg("name");
-  Serial.print(path);
-  Serial.print(" len: ");
-  Serial.println(path.length());
   String recImage = server.arg("image");
   File img = SPIFFS.open(path, "w+");
-  
-  saveAsLastImage(path);
-  
+
+  if (!img) {
+    Serial.println("Failed to open file for writing");
+    return;
+  }
+
   img.print(recImage);
   img.seek(0, SeekSet);
   imgWidth = img.parseInt();
-  
+  long uploadBegin = millis();
+  uint8_t uploadSuccessful = 1;
+
   for (int i = 0; i < imgWidth * NUMPIXELS; i++) {
     pixelArray[i] = (uint8_t)img.parseInt();
+//    delay(1); 
+    if (millis() - uploadBegin > 5000) {
+      Serial.println("File read timed out");
+      uploadSuccessful = 0;
+      server.send(200, "text/plain", "upload failed");
+      //now clear array and reload previous image???
+      break;
+    }
   }
   img.close();
-  
-  // if (!image_received) {
-  //   image_received = 1;
-//    strip = Adafruit_DotStar(height, DOTSTAR_BGR);
-//    strip.begin(); // Initialize pins for output
-//    strip.show();  // Turn all LEDs off ASAP    
-  // }
-  //have to send a response so client doesn't hang
-  server.send(200, "text/plain", "ok");
+  //only save ast last image on successful upload
+  if (uploadSuccessful) {
+    saveAsLastImage(path);
+    server.send(200, "text/plain", "ok");
+  }
 }
 
 void handleNotFound(){
-  server.send(404, "text/plain", "Go to <a href= \"http://www.pov.com\">www.pov.com</a>");
+  server.send(404, "text/html", "Go to <a href= \"http://www.pov.com\">www.pov.com</a>");
 }
 
 void pushPixelColumn(int col, int len) {
