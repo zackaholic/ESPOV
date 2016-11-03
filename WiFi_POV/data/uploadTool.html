@@ -7,9 +7,7 @@
      <p></p>
      <form>
        <input type="text" name="fileName" id="fileNameField">
-       <div id="uploadButton">
-        <h4>Upload</h4> 
-       </div>
+       <button type="button" id="fileUploadButton">Upload</button>
      </form>
      <div id="colorPicker">
        <div id="drawingColorSwatch">
@@ -20,10 +18,11 @@
        </table>
      </div>
      <div id="fileBrowser">
-       <form action="getImages">
+       <form>
          <select name="files" id="fileDropdown">
          </select>
-         <button type="button" id="submitDropdownFile">Select</button>
+         <button type="button" id="fileSelectButton">Select</button>
+         <button type="button" id="fileDeleteButton">Delete</button>
        </form>
      </div>    
      <style>
@@ -35,7 +34,7 @@
          position: relative;
          width: 150px;
        }
-       #uploadButton {
+       #fileUploadButton {
          position: relative;
          cursor: pointer;
          border: 1px solid;
@@ -47,14 +46,7 @@
          text-align:center;
          border-radius: 4px;
        }
-       #uploadButton h4 {
-         position: absolute;
-         top: 50%;
-         margin: 0px;
-         left: 50%;
-         margin-right: 50%;
-         transform: translate(-50%, -50%);
-      }
+
        #colorPicker {
          touch-action: none; 
          display: inline-block; 
@@ -85,41 +77,65 @@
      <script type="text/javascript" defer>
        var canvas = document.getElementById('myCanvas');
        var colorPicker = document.getElementById('colorPicker')
-       function FileBrowser() {
-         var fileList = document.getElementById('fileDropdown');
+
+      function FileBrowser() {
+        var fileList = document.getElementById('fileDropdown');
    
-         this.submitFile = function(file) {
-           console.log(file);
-           var httpRequest = new XMLHttpRequest();          
-           var image;
-           httpRequest.onreadystatechange = function() {
-             if (httpRequest.readyState === XMLHttpRequest.DONE) {
-               if (httpRequest.status === 200) {
-                 image = httpRequest.responseText;
-                 console.log(image);
-               } else {
-                 console.log('Request failed');
-               }
-             }
-           }; 
-           httpRequest.open('POST', 'getImage');
-           httpRequest.send('image=' + file);          
-         };
-         this.refreshFiles = function() {
+        this.deleteFile = function(fileID) {
+          var imagePath = '/img/' + fileID;
+          var option = document.getElementById(fileID);
+          var httpRequest = new XMLHttpRequest();
+
+          httpRequest.onreadystatechange = function() {
+            if (httpRequest.readyState === XMLHttpRequest.DONE) {
+              if (httpRequest.status === 200) {
+                if (httpRequest.responseText === 'Success') {
+                  fileList.removeChild(option);
+                }
+              } else {
+                console.log(httpRequest.responseText + ' delete failed');
+              }
+            }
+          };
+
+          httpRequest.open('POST', 'deleteImage');
+          httpRequest.send('image=' + imagePath);
+        };
+
+        this.loadFile = function(imagePath) {
+          var httpRequest = new XMLHttpRequest();          
+          
+          httpRequest.onreadystatechange = function() {
+            if (httpRequest.readyState === XMLHttpRequest.DONE) {
+              if (httpRequest.status === 200) {
+                var imageString = httpRequest.responseText;
+                //Pixels.redrawCanvasFromBuffer(image);
+                console.log(imageString);                 
+              } else {
+                console.log('Submit failed');
+              }
+            }
+          }; 
+
+          httpRequest.open('POST', 'loadImage');
+          httpRequest.send('image=' + imagePath);          
+        };
+
+        this.refreshFiles = function() {
            var httpRequest = new XMLHttpRequest();
            var fileString = '';
            var images;
+
            httpRequest.onreadystatechange = function() {
              if (httpRequest.readyState === XMLHttpRequest.DONE) {
                if (httpRequest.status === 200) {
                  fileString = httpRequest.responseText;
-                 console.log('fileString: ' + fileString);
                  images = fileString.split('\n');
-                 console.log('images: ' + images);
                  for (var i = 0; i < images.length; i++) {
                    var option = document.createElement('option');
                    option.value = images[i];
                    option.innerHTML = option.value.replace('/img/', '');
+                   option.id = option.innerHTML;
                    fileList.appendChild(option);  
                  }                
                } else {
@@ -127,10 +143,60 @@
                }
              }
            }; 
-           httpRequest.open('POST', 'getImages');
+
+           httpRequest.open('POST', 'getSavedImages');
            httpRequest.send('');
+        };
+
+        this.uploadPixels = function(pixelArray) {
+         var fileName = document.getElementById("fileNameField").value;
+         if (fileName.length > 70) {
+           alert('File name must not exceed 70 characters');
+           return;
+         }       
+         if (fileName.length === 0) {
+           alert('Please enter a file name');
+           return;
+         } 
+         if (document.getElementById(fileName)) {
+           alert('A file by that name already exists');
+           return;
          }
-       }
+
+         var httpRequest = new XMLHttpRequest();
+
+         httpRequest.onreadystatechange = function() {
+           if (httpRequest.readyState === XMLHttpRequest.DONE) {
+             if (httpRequest.status === 200) {
+               console.log(httpRequest.responseText);
+               var option = document.createElement('option');
+               option.value = '/img/' + fileName;
+               option.innerHTML = option.id = fileName;
+               fileList.appendChild(option);  
+             } else {
+               console.log(httpRequest.responseText);
+             }
+           }
+         }; 
+
+         console.log(Pixels.generateUploadString(fileName));
+         httpRequest.open('POST', 'upload');
+         httpRequest.send(Pixels.generateUploadString(fileName));
+        };        
+
+        document.getElementById("fileUploadButton").onclick = function() {
+          FBrowser.uploadPixels();
+        };
+        document.getElementById("fileSelectButton").onclick = function(e) {
+          var imagePath = document.getElementById("fileDropdown").value;
+          FBrowser.loadFile(imagePath);
+        };
+        document.getElementById("fileDeleteButton").onclick = function() {
+         var fileID = document.getElementById("fileDropdown").value.replace('/img/', '');
+         FBrowser.deleteFile(fileID);
+        };
+      }
+
        function Pixels(rows, cols, canvas) {
          var buffer = new Uint8Array(rows * cols);
          var canvas = canvas;
@@ -142,21 +208,29 @@
          var drawing;
          var drawColor;
          this.generateUploadString = function(fileName) {
-           var imgString = 'name=' + '/img/' + fileName  + '.txt' + '&image=' + 
+           var imgString = 'name=' + '/img/' + fileName + '&image=' + 
              this.getImgWidth() + '\n' + pixelsToString();
            return imgString;
          }
+
          this.getImgWidth = function() {
            return imgWidth;
          }
+
          this.setImgWidth = function(pixels) {
            //size in pov displayed pixels
            imgWidth = pixels;  
          }
+
          this.setDrawColor = function(color) {
            drawColor = color;
            ctx.fillStyle = color;
          }
+
+         this.getDrawColor = function() {
+          return drawColor || '#ffffff';
+         }
+
          var pixelsToString = function() {
            var pixelString = '';
            for (var i = 0; i < imgWidth * canvasRows; i++) {
@@ -165,13 +239,16 @@
            }
            return pixelString;
          }
+
          this.getPixelBuffer = function() {
            return buffer;
          }
+
          this.getPixel = function(row, col) {
            var p = row + col * canvasRows;
            return buffer[p];
          }
+
          this.inputHexString = function(hexString) {
            var hex = hexString;
            var value;
@@ -181,6 +258,7 @@
            }
            redrawCanvasFromBuffer();
          }
+
          function redrawCanvasFromBuffer() {
            var row, col, colorString, r, g, b;
            for (var i = 0; i < buffer.length; i++) {
@@ -194,11 +272,13 @@
              setPixel(row, col);
            }
          }
+
          function setPixel(row, col) {
            var p = row + col * canvasRows;
            buffer[p] = color24To8Bit(drawColor);
            ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);     
          }
+
          function handleMove(evt) {
            if (drawing) {
              var row, col, mouse;
@@ -208,9 +288,11 @@
              setPixel(row, col);
            }
          }
+
          function handleMouseUp(evt) {
            drawing = false;
          }
+
          function handleMouseDown(evt) {
            var row, col;
            var mouse = getMousePos(canvas, evt);
@@ -219,6 +301,7 @@
            drawing = true;
            setPixel(row, col);
          }
+
          canvas.addEventListener("mousemove", handleMove);
          canvas.addEventListener("mousedown", handleMouseDown, false);
          canvas.addEventListener("mouseup", handleMouseUp);
@@ -226,12 +309,14 @@
          canvas.addEventListener("touchstart", handleMouseDown);
          canvas.addEventListener("touchend", handleMouseUp);                
        }
+
        function ColorPicker(numColors, picker) {
          var inUse = [];
          var picker = picker;
          var palette = document.getElementById("palette");
          var inUsePalette = document.getElementById("colorsInUse")
          var setBorder = createBorderPatrol();
+         
          function createBorderPatrol() {
            var lastElements;
            var currentElements;
@@ -257,9 +342,11 @@
            }
            return setBorder;
          }
+
          function displayDrawColor(color) {
            document.getElementById("drawingColorSwatch").style.backgroundColor = color;
          }
+
          function updateColorsInUse(color) {
            if (inUse.includes(color) || inUse.length == 25) {
              return;
@@ -274,10 +361,12 @@
            e.addEventListener("mouseenter", pickerMouseOver);
            inUse.push(color);
          }
+
          function correctGamma(val, max) {
            var gamma = 1.5;
            return max * Math.pow((val / max), 1 / gamma);
          }
+
          function populateColorPalette() {
            var index = 0;
            var row;
@@ -311,6 +400,7 @@
              }
            }        
          }
+
          function pickerMouseDown(evt) {
            eraseSelected = false;
            drawSelected = true;
@@ -320,34 +410,17 @@
            setBorder(evt.srcElement.className);
            updateColorsInUse(drawColor);
          }
+
          function pickerMouseOver(evt) {
            displayDrawColor(evt.srcElement.className);
          }
+
          document.getElementById("palette").addEventListener("mouseleave", function(evt) {
-           displayDrawColor(drawColor);
+            displayDrawColor(Pixels.getDrawColor());
          });
          populateColorPalette();                
        }
-       function uploadPixels(pixelArray) {
-         var fileName = document.getElementById("fileNameField").value;
-         if (fileName.length > 70) {
-           alert('File name must not exceed 70 characters');
-           return;
-         }        
-         var httpRequest = new XMLHttpRequest();
-         httpRequest.onreadystatechange = function() {
-           if (httpRequest.readyState === XMLHttpRequest.DONE) {
-             if (httpRequest.status === 200) {
-               console.log(httpRequest.responseText);
-             } else {
-               console.log(httpRequest.responseText);
-             }
-           }
-         }; 
-         console.log(Pixels.generateUploadString(fileName));
-         httpRequest.open('POST', 'upload');
-         httpRequest.send(Pixels.generateUploadString(fileName));
-       };
+
        function getMousePos(element, evt) {
          var rect = element.getBoundingClientRect();
          var xPos, yPos;
@@ -363,6 +436,7 @@
          yPos -= rect.top;
          return {x : xPos, y : yPos};
        }
+
        function padHex(num) {
          var paddedNum = num.toString(16);
          if (paddedNum.length == 1) {
@@ -370,6 +444,7 @@
          }
          return paddedNum;
        }
+
        function color8to24bit(color) {
          var red = color & 0b11100000 << 21;
          var green = color & 0b00011100 << 13;
@@ -377,14 +452,18 @@
          var color24 = red | green | blue;
          return color24;
        }
+
        function color24To8Bit(color) {
-         var color = parseInt(color.replace(/^#/, ''), 16);        
-         var red = color >> 21;
-         var green = color >> 13 & 0x07;
-         var blue = color >> 6 & 0x03;
-         var color8 = (red << 5) | (green << 2) | blue;
-         return color8;
+        if (color) {
+          var color = parseInt(color.replace(/^#/, ''), 16);        
+          var red = color >> 21;
+          var green = color >> 13 & 0x07;
+          var blue = color >> 6 & 0x03;
+          var color8 = (red << 5) | (green << 2) | blue;
+          return color8;
+        }
        }
+
        var Pixels = new Pixels(36, 30, canvas);
        var Picker = new ColorPicker(256, colorPicker);
        var FBrowser = new FileBrowser();
@@ -394,14 +473,6 @@
        catch(e) {
          console.log("Can't refresh files");
        }
-       
-       document.getElementById("uploadButton").onclick = function() {
-         uploadPixels();
-       };
-       document.getElementById("submitDropdownFile").onclick = function(e) {
-         var file = document.getElementById("fileDropdown").value;
-         FBrowser.submitFile(file);
-       };
      </script>
    </body>
  </html>

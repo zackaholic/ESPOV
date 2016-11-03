@@ -45,7 +45,7 @@ void handleRoot() {
   server.send(200, "text/html", html);
 }
 
-void handleGetImageFiles() {
+void handleGetSavedImages() {
   String fileList = "";
   Dir dir = SPIFFS.openDir("/img");
   while (dir.next()) {
@@ -55,7 +55,18 @@ void handleGetImageFiles() {
   server.send(200, "text/plain", fileList);
 }
 
-void handleGetImage() {
+void handleDeleteImage() {
+  String imagePath = server.arg("image");
+  SPIFFS.remove(imagePath);
+  File img = SPIFFS.open(imagePath, "r");
+  if (!img) {
+    server.send(200, "text/plain", "Success");
+  } else {
+    server.send(200, "text/plain", "Error");
+  }
+}
+
+void handleLoadImage() {
   String imagePath = server.arg("image");
   String imageString = "";
   for (int i = 0; i < 1080; i++) {
@@ -136,6 +147,10 @@ void servicePOV(int hertz, int width){
   }
 }
 
+uint8_t deleteImage(String path) {
+  SPIFFS.remove(path);
+}
+
 uint8_t loadImage(String path) {
   File img = SPIFFS.open(path, "r");
   if (!img) {
@@ -195,8 +210,9 @@ EEPROM.begin(80);
   
   server.on("/", handleRoot);
   server.on("/upload", handleUpload);
-  server.on("/getImages", handleGetImageFiles);  
-  server.on("/getImage", handleGetImage);
+  server.on("/getSavedImages", handleGetSavedImages);  
+  server.on("/loadImage", handleLoadImage);
+  server.on("/deleteImage", handleDeleteImage);
   server.onNotFound(handleNotFound);
 
   server.begin();
