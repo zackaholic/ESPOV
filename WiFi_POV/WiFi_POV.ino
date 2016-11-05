@@ -69,14 +69,13 @@ void handleDeleteImage() {
 void handleLoadImage() {
   String imagePath = server.arg("image");
   String imageString = "";
+
+  loadImage(imagePath);
+
   for (int i = 0; i < 1080; i++) {
     imageString += pixelArray[i];
     imageString += ',';
   }
-  loadImage(imagePath);
-
-  Serial.print("Line 66 heap: ");
-  Serial.println(system_get_free_heap_size());
   
   server.send(200, "text/plain", imageString);
 }

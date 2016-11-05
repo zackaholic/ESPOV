@@ -109,8 +109,8 @@
             if (httpRequest.readyState === XMLHttpRequest.DONE) {
               if (httpRequest.status === 200) {
                 var imageString = httpRequest.responseText;
-                //Pixels.redrawCanvasFromBuffer(image);
-                console.log(imageString);                 
+                console.log(imageString);
+                Pixels.loadImage(imageString);            
               } else {
                 console.log('Submit failed');
               }
@@ -249,12 +249,14 @@
            return buffer[p];
          }
 
-         this.inputHexString = function(hexString) {
-           var hex = hexString;
-           var value;
+         this.loadImage = function(imgString) {
+           var pixels = imgString.split(',');
            for (var i = 0; i < buffer.length; i++) {
-             value = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-             buffer[i] = value;
+             if (pixels[i]) {
+               buffer[i] = parseInt(pixels[i], 10);
+             } else {
+              buffer[i] = 0;
+             }
            }
            redrawCanvasFromBuffer();
          }
@@ -467,6 +469,7 @@
        var Pixels = new Pixels(36, 30, canvas);
        var Picker = new ColorPicker(256, colorPicker);
        var FBrowser = new FileBrowser();
+  
        try {
          FBrowser.refreshFiles();
        }
