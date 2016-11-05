@@ -18,7 +18,7 @@
      </div>
      <div id="fileBrowser">
        <form>
-        <input type="text" name="fileName" id="fileNameField">
+        <input type="text" name="fileName" id="fileNameField" placeholder="enter filename"></input>
         <button type="button" id="fileUploadButton">Upload</button>
         <button type="button" id="clearButton">Clear</button>
         <p></p>
@@ -169,7 +169,7 @@
                var option = document.createElement('option');
                option.value = '/img/' + fileName;
                option.innerHTML = option.id = fileName;
-               fileList.appendChild(option);  
+               fileList.insertBefore(option, fileList.firstChild); 
              } else {
                console.log(httpRequest.responseText);
              }
