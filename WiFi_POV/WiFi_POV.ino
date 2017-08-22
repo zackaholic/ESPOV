@@ -14,18 +14,11 @@ int height = 36;
 int imgWidth;
 uint8_t image_received = 0;
 Adafruit_DotStar strip = Adafruit_DotStar(NUMPIXELS, DOTSTAR_BGR);
-// Here's how to control the LEDs from any two pins:
-//#define DATAPIN    4
-//#define CLOCKPIN   5
-//Adafruit_DotStar strip = Adafruit_DotStar(NUMPIXELS, DATAPIN, CLOCKPIN, DOTSTAR_BRG);
-
+/*
 extern "C" {
   #include "user_interface.h"
 }
-
-//hardware spi:
-//Adafruit_DotStar strip = Adafruit_DotStar(height, DOTSTAR_BGR);
-
+*/
 const byte DNS_PORT = 53;
 IPAddress apIP(192, 168, 1, 1);
 DNSServer dnsServer;
@@ -33,6 +26,16 @@ ESP8266WebServer server(80);
 
 uint8_t pixelArray[1080];
 
+void serveMain() {
+  File root = SPIFFS.open("/main.html", "r");
+  if (!root) {
+    Serial.println("Failed to open main");
+    return;
+  }
+  size_t sent = server.streamFile(root, "text/html");
+  root.close();
+}
+/*
 void handleRoot() {
   File root = SPIFFS.open("/uploadTool.html", "r");
   if (!root) {
@@ -44,8 +47,8 @@ void handleRoot() {
 
   server.send(200, "text/html", html);
 }
-
-void handleGetSavedImages() {
+*/
+void getSavedFiles() {
   String fileList = "";
   Dir dir = SPIFFS.openDir("/img");
   while (dir.next()) {
@@ -55,7 +58,7 @@ void handleGetSavedImages() {
   server.send(200, "text/plain", fileList);
 }
 
-void handleDeleteImage() {
+void deleteFile() {
   String imagePath = server.arg("image");
   SPIFFS.remove(imagePath);
   File img = SPIFFS.open(imagePath, "r");
@@ -66,7 +69,7 @@ void handleDeleteImage() {
   }
 }
 
-void handleLoadImage() {
+void loadFile() {
   String imagePath = server.arg("image");
   String imageString = "";
 
@@ -80,7 +83,7 @@ void handleLoadImage() {
   server.send(200, "text/plain", imageString);
 }
 
-void handleUpload() {
+void saveFile() {
   String path = server.arg("name");
   String recImage = server.arg("image");
   File img = SPIFFS.open(path, "w+");
@@ -207,11 +210,11 @@ EEPROM.begin(80);
   // start DNS server for a specific domain name
   dnsServer.start(DNS_PORT, "www.pov.com", apIP);
   
-  server.on("/", handleRoot);
-  server.on("/upload", handleUpload);
-  server.on("/getSavedImages", handleGetSavedImages);  
-  server.on("/loadImage", handleLoadImage);
-  server.on("/deleteImage", handleDeleteImage);
+  server.on("/", serveMain);
+  server.on("/saveFile", saveFile);
+  server.on("/getSavedFiles", getAllFiles);  
+  server.on("/loadFile", loadFile);
+  server.on("/deleteFile", deleteFile);
   server.onNotFound(handleNotFound);
 
   server.begin();
