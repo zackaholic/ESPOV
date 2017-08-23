@@ -1,76 +1,124 @@
 /*
-Drawing canvas module manages displaying the image and
-the canvas drawing interface. The actual image data is 
-managed by the main app module
+All canvas drawing and interaction done here
+Module API:
+  -setup canvas based on physical hardware
+  -get current image as pixel data 
+  -load image from pixel data
 */
+
 const drawingCanvas = (function (canvas) {
-  const module = {};
   const ctx = canvas.getContext('2d');
+  const imageBuffer = [];  
   let pixelSize = 30;
-  let width;
-  let height;
+  let drawingColor = '#000000';
+  let rows;
+  let cols;
 
-  module.getElement = () => {
-    return canvas;
+  function getMousePos (evt) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x : evt.clientX - rect.left,
+      y : evt.clientY - rect.top
+    };
   }
 
-  module.pixelIndexFromCoordinates = (xCanvasCoord, yCanvasCoord) => {
-    const x = Math.floor(xCanvasCoord / pixelSize);
-    const y = Math.floor(yCanvasCoord / pixelSize);
-    return y * width + x;
+  function pixelIndexFromCoordinates (mouseCoords) {
+    const x = Math.floor(mouseCoords.x / pixelSize);
+    const y = Math.floor(mouseCoords.y / pixelSize);
+    return y * cols + x;
   }
 
-  module.setPixelSize = (size) => {
-    //use pixelsize to implement scaling- increase size and redraw
-    //offset pixels vertically or horizontally to achieve scrolling
+  function setPixelSize (size) {
     pixelSize = size;
   }
 
-  module.clearCanvas = () => {
+  function clearCanvas () {
     ctx.clearRect(0, 0, canvas.width, canvas.height);    
   }
 
-  module.initializeCanvas = (xPixels, yPixels) => {
-    //pixels here refers to giant drawing pixels, not screen pixels
-    width = xPixels;
-    height = yPixels;
+  function drawPixel (index) {
+    ctx.fillStyle = drawingColor;
+
+    let x = index % cols;
+    let y = Math.floor(index / cols);
+    if (x <= cols && y <= rows){
+      ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+    }
   }
 
-  module.drawPixel = (index, color) => {
-    ctx.fillStyle = color;
-    let x = index % width;
-    let y = Math.floor(index / width);
-    ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+  function isDrawable (mousePos) {
+    return (mousePos.x < pixelSize * cols && mousePos.y < pixelSize * rows);
   }
-
-  module.drawCanvasFromBuffer = (buff) => {
+  
+  function drawCanvasFromBuffer (buff) {
     buff.forEach((value, index) => {
-      module.drawPixel(index, value);
+      drawPixel(index, value);
     }) 
+  }
+
+  function mouseMove(evt) {
+    //check if lmb is pressed
+    if (evt.buttons === 1) {
+      const mousePos = getMousePos(evt);
+      if (isDrawable(mousePos)){
+        const pixelIndex = pixelIndexFromCoordinates(mousePos);
+
+        if (imageBuffer[pixelIndex] !== drawingColor) {
+          imageBuffer[pixelIndex] = drawingColor;
+          drawPixel(pixelIndex, drawingColor);
+        }
+      }
+    } else {
+      //only got here is lmb was released outside of page- remove listener
+      canvas.removeEventListener('mousemove', mouseMove)
+    }
+  }
+
+  function mouseUp() {
+    canvas.removeEventListener('mousemove', mouseMove);
+  }
+
+  function mouseDown(evt) {
+    canvas.addEventListener('mousemove', mouseMove);
+    const mousePos = getMousePos(evt);
+
+    if (isDrawable(mousePos)) {
+      const pixelIndex = pixelIndexFromCoordinates(mousePos);
+      drawingColor = colorPicker.getDrawingColor();
+
+      if (imageBuffer[pixelIndex] === drawingColor) {
+        return;
+      }
+      
+      imageBuffer[pixelIndex] = drawingColor;
+      drawPixel(pixelIndex, drawingColor);
+    }
+  }
+
+  canvas.addEventListener('mousedown', mouseDown);
+  canvas.addEventListener('mouseup', mouseUp);
+
+  const module = {};
+
+  module.getImage = function () {
+    return imageBuffer.toString();
+  }
+
+  module.loadImage = function (data) {
+    drawCanvasFromBuffer(data);
+  }
+
+  module.initialize = function (r, c) {
+    rows = r;
+    cols = c;
+    for (let i = 0; i < rows * cols; i++) {
+      imageBuffer[i] = '#000000';
+    }
   }
 
   return module;
 
 }(document.getElementById("drawingCanvas")));
-
-       // function drawingCanvas(rows, cols, canvas) {
-       //   const pixelBuffer = new Uint8Array(rows * cols);
-       //   const canvas = canvas;
-//         const ctx = canvas.getContext('2d');
-//         let pixelSize = 30;
-//         const canvasRows = rows;
-            //rows and columns set by app???
-
-//         var imgWidth = cols; //display width measured in 'pov pixels' (not screen pixels)
-//         const canvasColumns = cols;
-         // let drawing;
-         // let drawColor;
-
-         // this.generateUploadString = function(fileName) {
-         //   var imgString = 'name=' + '/img/' + fileName + '&image=' + 
-         //     this.getImgWidth() + '\n' + pixelsToString();
-         //   return imgString;
-         // }
 
 
 
