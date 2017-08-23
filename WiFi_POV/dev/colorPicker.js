@@ -1,6 +1,6 @@
 const colorPicker = (function (containerElement) {
   const paletteColors = [
-    '#000','#440','#702800','#841800','#880000','#78005c','#480078',
+    '#000000','#444400','#702800','#841800','#880000','#78005c','#480078',
     '#140084','#000088','#00187c','#002c5c','#003c2c','#003c00',
     '#143800','#2c3000','#442800','#404040','#646410','#844414',
     '#983418','#9c2020','#8c2074','#602090','#302098','#1c209c',
@@ -25,23 +25,21 @@ const colorPicker = (function (containerElement) {
 
   const inUsePalette = document.getElementById('inUsePalette');
   const mainPalette =  document.getElementById('mainPalette');
-  const drawingColorSwatch =  document.getElementById('drawingColorSwatch');
+  const activeColorSwatch =  document.getElementById('activeColorSwatch');
   //childNodes is a live collection so it only needs declaring once
   const selectionSwatches = {
     inUse: inUsePalette.getElementsByTagName('div'),
     main: mainPalette.getElementsByTagName('td')
   }
 
-  const module = {};
-
   let lastElements;
   let currentElements;  
   let inUseColors = [];
-  let drawingColor = '#000000';
+  let activeColor = '#000000';
 
 
   function loadMainPalette() {
-  //change this structure to divs for layout flexibility? 
+  //change this to divs? 
     let row;
     let e;
     //using a document fragment just for fun
@@ -52,11 +50,11 @@ const colorPicker = (function (containerElement) {
         swatches.appendChild(row);
         e = document.createElement("td");
         row.appendChild(e);
-        e.dataset.color = color;
+        e.style.color = color;
       } else {
         e = document.createElement("td");
         row.appendChild(e);
-        e.dataset.color = color;
+        e.style.color = color;
       } 
       e.style.backgroundColor =  color;
       e.style.borderColor = color;
@@ -69,33 +67,32 @@ const colorPicker = (function (containerElement) {
   }
 
   function setBorder(color, previousColor) {
-    //TODO: just check element.style.color- no data necessary
     Array.prototype.forEach.call(selectionSwatches.inUse, (element) => {
-      if (element.dataset.color === previousColor) {
-        element.style.borderColor = element.dataset.color;
+      if (element.style.color === previousColor) {
+        element.style.borderColor = element.style.color;
       }
-      if (element.dataset.color === color) {
-        element.style.borderColor = '#000';
+      if (element.style.color === color) {
+        element.style.borderColor = '#000000';
       }
     });
     Array.prototype.forEach.call(selectionSwatches.main, (element) => {
-      if (element.dataset.color === previousColor) {
-        element.style.borderColor = element.dataset.color;
+      if (element.style.color === previousColor) {
+        element.style.borderColor = element.style.color;
       }
-      if (element.dataset.color === color) {
-        element.style.borderColor = '#000';
+      if (element.style.color === color) {
+        element.style.borderColor = '#000000';
       }      
     });
   }
 
   function addToInUsePalette(color) {
     if (inUseColors.includes(color) || inUseColors.length === 25 ||
-        color === '#000') {
+        color === '#000000') {
       return;
     }
     let e = document.createElement("div");
     inUsePalette.appendChild(e);
-    e.dataset.color = color;
+    e.style.color = color;
     e.style.backgroundColor = color;
     e.style.borderColor = '#000000';
     //trying moving this event to parent
@@ -115,25 +112,25 @@ const colorPicker = (function (containerElement) {
   }
 
   function mouseDown(evt) {
-    //border logic is still funky. Will fail of called before new
+    //border logic is still funky. Will fail if called before new
     //drawing color is set
-    //untested: switched to event.target- part of the standard dom API
-    drawingColorSwatch.style.backgroundColor = evt.target.className;
-    setBorder(evt.target.dataset.color, drawingColor);
-    drawingColor = evt.target.dataset.color;
-    addToInUsePalette(drawingColor);
+    activeColorSwatch.style.color = evt.target.style.color;
+    setBorder(evt.target.style.color, activeColor);
+    activeColor = evt.target.style.color;
+    addToInUsePalette(activeColor);
   }
 
   function mouseOver(evt) {
-    drawingColorSwatch.style.backgroundColor = evt.target.className;
+    activeColorSwatch.style.backgroundColor = evt.target.style.color;
   }
   
   function mouseLeave(evt) {
-    drawingColorSwatch.style.backgroundColor = drawingColor;
+    activeColorSwatch.style.backgroundColor = activeColor;
   }
 
-  module.getElement = () => containerElement;
-  module.getDrawingColor = () => drawingColor;
+  const module = {};
+
+  module.getActiveColor = function () {return activeColor;};
 
   loadMainPalette();
 

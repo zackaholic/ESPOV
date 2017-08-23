@@ -9,7 +9,7 @@ Module API:
 const drawingCanvas = (function (canvas) {
   const ctx = canvas.getContext('2d');
   const imageBuffer = [];  
-  let pixelSize = 30;
+  let pixelSize = 20;
   let drawingColor = '#000000';
   let rows;
   let cols;
@@ -81,10 +81,11 @@ const drawingCanvas = (function (canvas) {
   function mouseDown(evt) {
     canvas.addEventListener('mousemove', mouseMove);
     const mousePos = getMousePos(evt);
-
+    //set drawing color in case mouse moves into drawable area
+    drawingColor = colorPicker.getActiveColor();
+    
     if (isDrawable(mousePos)) {
       const pixelIndex = pixelIndexFromCoordinates(mousePos);
-      drawingColor = colorPicker.getDrawingColor();
 
       if (imageBuffer[pixelIndex] === drawingColor) {
         return;

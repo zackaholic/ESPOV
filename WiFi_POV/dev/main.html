@@ -7,19 +7,22 @@
      <p></p>
 
      <div id="colorPicker">
-      <!--Use templates here instead?-->
-       <div id="drawingColorSwatch">
-       </div>
+       <div id="activeColorSwatch">
+       </div>     
        <div id="inUsePalette">
        </div>
        <table id="mainPalette">
        </table>
+       <div id= "tools">
+        <div id= "pencil">P</div>
+        <div id= "dropper">D</div>
+        <div id= "trash">T</div>
+      </div>  
      </div>
      <div id="fileBrowser">
        <form>
         <input type="text" name="fileName" id="fileNameField" placeholder="enter filename"></input>
         <button type="button" id="fileSaveButton">Upload</button>
-        <button type="button" id="clearButton">Clear</button>
         <p></p>
         <select name="files" id="fileDropdown"></select>
         <button type="button" id="fileLoadButton">Select</button>
@@ -32,20 +35,5 @@
      <script src="fileBrowser.js"></script>
      <script src="app.js"></script>
 
-     <!--
-      ////script to load concatenated js file after complete page load////
-     <script type="text/javascript">
-      function downloadJSAtOnload() {
-      var element = document.createElement("script");
-      element.src = "defer.js";
-      document.body.appendChild(element);
-      }
-      if (window.addEventListener)
-      window.addEventListener("load", downloadJSAtOnload, false);
-      else if (window.attachEvent)
-      window.attachEvent("onload", downloadJSAtOnload);
-      else window.onload = downloadJSAtOnload;
-     </script>
-     -->
    </body>
  </html>

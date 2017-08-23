@@ -49,7 +49,7 @@ const fileBrowser = (function (containerElement) {
     });
   }
 
-  module.refreshFileList = function() {
+  function refreshFileList () {
     get(refreshFilesURL).then((response) => {
       console.log(response);
     }, (error) => {
@@ -57,7 +57,7 @@ const fileBrowser = (function (containerElement) {
     });
   }
 
-  module.deleteFile = function(filePath) {
+  function deleteFile (filePath) {
     post(deleteFileURL, filePath).then((response) => {
       console.log(response);
     }, (error) => {
@@ -65,7 +65,7 @@ const fileBrowser = (function (containerElement) {
     });
   }
 
-  module.saveFile = function(filePath, fileData) {
+  function saveFile (filePath, fileData) {
     post(saveFileURL, file).then((response) => {
       console.log(response);
     }, (error) => {
@@ -73,7 +73,7 @@ const fileBrowser = (function (containerElement) {
     });
   }
 
-  module.loadSavedFile = function(filePath) {
+  function loadSavedFile (filePath) {
     get(loadFileURL).then((response) => {
       console.log(response);
       return response;
@@ -86,6 +86,33 @@ const fileBrowser = (function (containerElement) {
   return module;
 
 })(document.getElementById('fileBrowser'));
+
+/*
+ From App:
+
+const filesList = document.getElementById('fileDropdown');
+const saveButton = document.getElementById('fileSaveButton');
+const loadButton = document.getElementById('fileLoadButton');
+const deleteButton = document.getElementById('fileDeleteButton');
+saveButton.addEventListener('click', console.log);
+loadButton.addEventListener('click', console.log);
+deleteButton.addEventListener('click', console.log);
+
+        this.uploadPixels = function(pixelArray) {
+         var fileName = document.getElementById("fileNameField").value;
+         if (fileName.length > 70) {
+           alert('File name must not exceed 70 characters');
+           return;
+         }       
+         if (fileName.length === 0) {
+           alert('Please enter a file name');
+           return;
+         } 
+         if (document.getElementById(fileName)) {
+           alert('A file by that name already exists');
+           return;
+         }
+
 
 /*
 
