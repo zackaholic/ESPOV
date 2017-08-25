@@ -13,16 +13,7 @@ drawingCanvas.initialize(13, 26);
 
 
 
-/*
-        const clearButton = document.getElementById('fileUploadButton');    
-        document.getElementById("clearButton").onclick = function() {
-          Pixels.resetCanvas();
-          Picker.clearColorsInUse();
-        }  
 
-
-
-*/
 
 
 

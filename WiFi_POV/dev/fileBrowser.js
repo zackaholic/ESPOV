@@ -1,87 +1,125 @@
 const fileBrowser = (function (containerElement) {
-  const module = {};
   const refreshFilesURL = 'getSavedFiles';
   const deleteFileURL = 'deleteFile';
   const saveFileURL = 'saveFile';
   const loadFileURL = 'loadFile';
 
-  function get(url) {
-    return new Promise(function (resolve, reject) {
-      let req = new XMLHttpRequest();
-      req.open('GET', url);
+  const fs = {
+    get: function (url) {
+      return new Promise(function (resolve, reject) {
+        let req = new XMLHttpRequest();
+        req.open('GET', url);
 
-      req.onload = function() {
-        if (req.status === 200) {
-          resolve(req.response);
-        }
-        else {
-          reject(Error(req.statusText));
-        }
-      };
+        req.onload = function() {
+          if (req.status === 200) {
+            resolve(req.response);
+          }
+          else {
+            reject(Error(req.statusText));
+          }
+        };
 
-      req.onerror = function() {
-        reject(Error('Error connecting to server'));
-      };
+        req.onerror = function() {
+          reject(Error('Error connecting to server'));
+        };
 
-      req.send();
-    });
+        req.send();
+      });
+    },
+
+    post: function (url, data) {
+      return new Promise(function(resolve, reject) {
+        let req = new XMLHttpRequest();
+        req.open('POST', url);
+
+        req.onload = function() {
+          if (req.status === 200) {
+            resolve(req.response);
+          }
+          else {
+            reject(Error(req.statusText));
+          }
+        };
+
+        req.onError = function() {
+          reject(Error('Error connecting to server'));
+        };
+
+        req.send(data);
+      });
+    }
   }
 
-  function post(url, data) {
-    return new Promise(function(resolve, reject) {
-      let req = new XMLHttpRequest();
-      req.open('POST', url);
-
-      req.onload = function() {
-        if (req.status === 200) {
-          resolve(req.response);
-        }
-        else {
-          reject(Error(req.statusText));
-        }
-      };
-
-      req.onError = function() {
-        reject(Error('Error connecting to server'));
-      };
-
-      req.send(data);
-    });
-  }
-
-  function refreshFileList () {
-    get(refreshFilesURL).then((response) => {
+  const deleteButton = Object.create(fs);
+  deleteButton.element = document.getElementById('fileDeleteButton');
+  deleteButton.deleteFile = function (filePath) {
+    this.post(deleteFileURL, filePath).then((response) => {
+      fileList.remove(filePath);
       console.log(response);
+      //remove file from dropdown
     }, (error) => {
       console.log(error);
     });
-  }
+  };
+  deleteButton.element.addEventListener('click', deleteButton.deleteFile.bind(deleteButton));
 
-  function deleteFile (filePath) {
-    post(deleteFileURL, filePath).then((response) => {
-      console.log(response);
+//'save' is confusing here- this button is labeled 'upload'
+  const saveButton = Object.create(fs);
+  saveButton.element = document.getElementById('fileSaveButton');
+  saveButton.saveFile = function (filePath, fileData) {
+    const file = 'compose file here';
+    this.post(saveFileURL, file).then((response) => {
+      fileList.add(filePath);
+      console.log(filePath);
     }, (error) => {
       console.log(error);
-    });
-  }
 
-  function saveFile (filePath, fileData) {
-    post(saveFileURL, file).then((response) => {
-      console.log(response);
-    }, (error) => {
-      console.log(error);
     });
-  }
+  };
+  saveButton.element.addEventListener('click', saveButton.saveFile.bind(saveButton));
 
-  function loadSavedFile (filePath) {
-    get(loadFileURL).then((response) => {
+  const loadSavedButton = Object.create(fs);
+  loadSavedButton.element = document.getElementById('fileLoadButton');
+  loadSavedButton.loadSaved = function (filePath) {
+    console.log(this);
+    this.get(loadFileURL).then((response) => {
       console.log(response);
-      return response;
+      //drawingCanvas.loadImageFromBuffer(response) or something like that
     }, (error) => {
       console.log(error);
       return error;
     });
+  };
+  loadSavedButton.element.addEventListener('click', loadSavedButton.loadSaved.bind(loadSavedButton));
+
+  const fileList = Object.create(fs);
+  fileList.element = document.getElementById('fileDropdown');
+  fileList.files = [];
+  fileList.refresh = function () {
+    this.get(refreshFilesURL).then((response) => {
+      console.log(response);
+      //response.split.forEach(this.addFile) or something
+    }, (error) => {
+      console.log(error);
+    });
   }
+  fileList.remove = function (filePath) {
+    //will the array index of a file always match the dropdown index?
+    let index;
+    if ((index = this.files.indexOf(filePath)) > -1) {
+      this.files.splice(index, 1);
+    }
+    this.element.remove(index);
+  };
+  fileList.add = function (filePath) {
+    this.files.push(filePath);
+    const file = document.createElement('option');
+    file.text = filePath;
+    this.element.add(file);
+  };
+
+  const module = {};
+  module.refreshFileList = fileList.refresh;
 
   return module;
 
@@ -89,15 +127,7 @@ const fileBrowser = (function (containerElement) {
 
 /*
  From App:
-
-const filesList = document.getElementById('fileDropdown');
-const saveButton = document.getElementById('fileSaveButton');
-const loadButton = document.getElementById('fileLoadButton');
-const deleteButton = document.getElementById('fileDeleteButton');
-saveButton.addEventListener('click', console.log);
-loadButton.addEventListener('click', console.log);
-deleteButton.addEventListener('click', console.log);
-
+ 
         this.uploadPixels = function(pixelArray) {
          var fileName = document.getElementById("fileNameField").value;
          if (fileName.length > 70) {
@@ -112,34 +142,4 @@ deleteButton.addEventListener('click', console.log);
            alert('A file by that name already exists');
            return;
          }
-
-
-/*
-
-
-
-         var httpRequest = new XMLHttpRequest();
-
-//adding fileSystem element to dropdown...
-
-         httpRequest.onreadystatechange = function() {
-           if (httpRequest.readyState === XMLHttpRequest.DONE) {
-             if (httpRequest.status === 200) {
-               console.log(httpRequest.responseText);
-               var option = document.createElement('option');
-               option.value = '/img/' + fileName;
-               option.innerHTML = option.id = fileName;
-               fileList.insertBefore(option, fileList.firstChild); 
-             } else {
-               console.log(httpRequest.responseText);
-             }
-           }
-         }; 
-
-         console.log(Pixels.generateUploadString(fileName));
-
-        };        
-
-
-      }
 */
