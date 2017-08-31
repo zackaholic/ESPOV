@@ -5,7 +5,7 @@ server response? Initialize modules based on screen size?
 
 
 
-drawingCanvas.initialize(13, 26);
+drawingCanvas.initialize(36, 30);
 
 
 

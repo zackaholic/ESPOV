@@ -38,13 +38,55 @@ const colorPicker = (function (containerElement) {
   let activeColor = '#000000';
 
 
+  function createColorPalette () {
+    const palette = [];
+    let index = 0;
+    for (let r = 0; r < 8; r++) {
+      for (let g = 0; g < 8; g++) {
+        for (let b = 0; b < 4; b++) {
+          palette[index++] = `rgb(${r << 5}, ${g << 5}, ${b << 6})`;
+        }
+      }
+    } 
+    return palette;
+  }
+
+  function createMainPalette() {
+    let row;
+    let e;
+    const colorPalette = createColorPalette();
+    let swatches = document.createDocumentFragment();
+    palette.forEach((color, index) => {
+      if (index % 4 == 0){
+        row = document.createElement("tr");
+        swatches.appendChild(row);
+        e = document.createElement("td");
+        row.appendChild(e);
+        e.style.color = color;
+      } else {
+        e = document.createElement("td");
+        row.appendChild(e);
+        e.style.color = color;
+      } 
+      e.style.backgroundColor =  color;
+      e.style.borderColor = color;
+
+      e.addEventListener("mousedown", mouseDown);
+      e.addEventListener("mouseenter", mouseOver);
+      e.addEventListener("mouseleave", mouseLeave);    
+    });
+    mainPalette.appendChild(swatches);
+  }
+
   function loadMainPalette() {
-  //change this to divs? 
+
+    //and rework this whole thing.
     let row;
     let e;
     //using a document fragment just for fun
+    const palette = createColorPalette();
     let swatches = document.createDocumentFragment();
-    paletteColors.forEach((color, index) => {
+    palette.forEach((color, index) => {
       if (index % 16 == 0){
         row = document.createElement("tr");
         swatches.appendChild(row);
@@ -114,6 +156,7 @@ const colorPicker = (function (containerElement) {
   function mouseDown(evt) {
     //border logic is still funky. Will fail if called before new
     //drawing color is set
+    //style.color returns an rgb encoded color in Chrome and IE. Maybe all browsers?
     activeColorSwatch.style.color = evt.target.style.color;
     setBorder(evt.target.style.color, activeColor);
     activeColor = evt.target.style.color;

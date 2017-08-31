@@ -10,7 +10,7 @@ const drawingCanvas = (function (canvas) {
   const ctx = canvas.getContext('2d');
   const imageBuffer = [];  
   let pixelSize = 20;
-  let drawingColor = '#000000';
+  let drawingColor = 'rgb(0, 0, 0)';
   let rows;
   let cols;
 
@@ -52,8 +52,36 @@ const drawingCanvas = (function (canvas) {
   
   function drawCanvasFromBuffer (buff) {
     buff.forEach((value, index) => {
+      const color = color24BitToString(color8to24bit(value));
       drawPixel(index, value);
     }) 
+  }
+
+  function color8bitTo24bitRGB(color) {
+    const red = color & 0b11100000;
+    const green = color & 0b00011100;
+    const blue = color & 0b00000011;
+
+    return `rgb(${red}, ${green}, ${blue})`;
+  }
+
+  function color24To8Bit(color) {
+    //color comes in 'rgb(255, 255, 255)' string
+    //images will be mostly black- save some effort
+    if (color === 'rgb(0, 0, 0)') {
+      return 0;
+    }
+    const rgb = color.match(/[0-9]+/g);        
+    var red = +rgb[0];
+    var green = +rgb[1];
+    var blue = +rgb[2];
+    var color8 = (rgb[0]) | (green >> 3) | blue >> 6;
+    return color8;
+  }
+
+  function canvasToString() {
+    const pixelString = imageBuffer.map(color24To8Bit).join();
+    return '&width=' + cols + '&image=' + pixelString;
   }
 
   function mouseMove(evt) {
@@ -99,10 +127,11 @@ const drawingCanvas = (function (canvas) {
   canvas.addEventListener('mousedown', mouseDown);
   canvas.addEventListener('mouseup', mouseUp);
 
+
   const module = {};
 
-  module.getImage = function () {
-    return imageBuffer.toString();
+  module.getImageString = function () {
+    return canvasToString();
   }
 
   module.loadImage = function (data) {
@@ -113,7 +142,7 @@ const drawingCanvas = (function (canvas) {
     rows = r;
     cols = c;
     for (let i = 0; i < rows * cols; i++) {
-      imageBuffer[i] = '#000000';
+      imageBuffer[i] = 'rgb(0, 0, 0)';
     }
   }
 

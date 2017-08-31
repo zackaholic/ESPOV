@@ -1,8 +1,8 @@
 const fileBrowser = (function (containerElement) {
-  const refreshFilesURL = 'getSavedFiles';
-  const deleteFileURL = 'deleteFile';
-  const saveFileURL = 'saveFile';
-  const loadFileURL = 'loadFile';
+  const refreshFilesURL = 'http://192.168.42.81/getSavedFiles';
+  const deleteFileURL = 'http://192.168.42.81/deleteFile';
+  const saveFileURL = 'http://192.168.42.81/saveFile';
+  const loadFileURL = 'http://192.168.42.81/loadFile';
 
   const fs = {
     get: function (url) {
@@ -66,11 +66,13 @@ const fileBrowser = (function (containerElement) {
 //'save' is confusing here- this button is labeled 'upload'
   const saveButton = Object.create(fs);
   saveButton.element = document.getElementById('fileSaveButton');
-  saveButton.saveFile = function (filePath, fileData) {
-    const file = 'compose file here';
-    this.post(saveFileURL, file).then((response) => {
-      fileList.add(filePath);
-      console.log(filePath);
+  saveButton.saveFile = function () {
+    const path = 'name=/img/' + 'textFieldValue';
+    const data = path + drawingCanvas.getImageString();
+    console.log(data);
+    this.post(saveFileURL, data).then((response) => {
+      fileList.add(path);
+      console.log(path);
     }, (error) => {
       console.log(error);
 
@@ -81,7 +83,6 @@ const fileBrowser = (function (containerElement) {
   const loadSavedButton = Object.create(fs);
   loadSavedButton.element = document.getElementById('fileLoadButton');
   loadSavedButton.loadSaved = function (filePath) {
-    console.log(this);
     this.get(loadFileURL).then((response) => {
       console.log(response);
       //drawingCanvas.loadImageFromBuffer(response) or something like that
@@ -108,8 +109,9 @@ const fileBrowser = (function (containerElement) {
     let index;
     if ((index = this.files.indexOf(filePath)) > -1) {
       this.files.splice(index, 1);
+      this.element.remove(index);
     }
-    this.element.remove(index);
+
   };
   fileList.add = function (filePath) {
     this.files.push(filePath);
@@ -119,6 +121,7 @@ const fileBrowser = (function (containerElement) {
   };
 
   const module = {};
+
   module.refreshFileList = fileList.refresh;
 
   return module;
@@ -127,7 +130,7 @@ const fileBrowser = (function (containerElement) {
 
 /*
  From App:
- 
+
         this.uploadPixels = function(pixelArray) {
          var fileName = document.getElementById("fileNameField").value;
          if (fileName.length > 70) {
