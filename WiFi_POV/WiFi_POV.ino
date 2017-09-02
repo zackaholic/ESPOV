@@ -5,7 +5,6 @@
 #include <ESP8266WebServer.h>
 #include "FS.h"
 #include <stdlib.h>
-#include <EEPROM.h>
 
 #define DEBUG 0
 
@@ -54,6 +53,12 @@ void getSavedFiles() {
   server.send(200, "text/plain", fileList);
 }
 
+void initializeApp() {
+  String initString = "pixels=";
+  initString += rows;
+  server.send(200, "text/plain", initString);
+}
+
 void deleteFile() {
   String imagePath = server.arg("image");
   SPIFFS.remove(imagePath);
@@ -84,13 +89,12 @@ void saveFile() {
   String recImage = server.arg("image");
   String width = server.arg("width");
   cols = width.toInt();
-  Serial.printf("width: %i\n", cols);
-  Serial.print("Saving ");
-  Serial.println(path);
+  int arrayLen = cols * rows;
   
   free(pixelArray);
-  pixelArray = (uint8_t *)malloc(rows * cols);
-
+  pixelArray = (uint8_t *)malloc(arrayLen);
+  //does file truncation mean i can safely write a shorter file over file
+  //using same name? does it need to be SPIFFS.remove()ed?
   File img = SPIFFS.open(path, "w+");
 
   if (!img) {
@@ -103,7 +107,8 @@ void saveFile() {
   int index = 0;
   for (int i = 0; i < recImage.length(); i++) {
     tempChar = recImage.charAt(i);
-    if (tempChar == ',') {
+    //add end-of-string check since there's no trailing comma
+    if (tempChar == ',' || i == recImage.length() - 1) {
       pixelArray[index++] = tempString.toInt();
       tempString = "";
     } else {
@@ -111,19 +116,22 @@ void saveFile() {
     }
   }
 
-  img.write(pixelArray, 600);
-
+  img.write(pixelArray, arrayLen);
   img.close();
-  //only save as last image on successful upload
-//  if (uploadSuccessful) {
-    saveAsLastImage(path);
-    server.send(200, "text/plain", "ok");
-//  }
   imageLoaded = 1;
+
+  //minimal check to make sure file was saved to FS
+  if (SPIFFS.exists(path)) {
+    saveAsLastImage(path);
+    server.send(200, "text/plain", "file saved");
+  } else {
+    server.send(500, "text/plain", "error: file not saved");
+  }
+
 }
 
 void handleNotFound(){
-  server.send(404, "text/html", "<h1>Go to <a href= \"http://www.pov.com\">www.pov.com</a></h1>");
+  server.send(404, "text/html", "<h1>404 Not Found</h1>");
 }
 
 
@@ -132,40 +140,34 @@ uint8_t deleteImage(String path) {
 }
 
 uint8_t loadImage(String path) {
-  /*
-   * changing width (columns) to a qs property messed this up
   File img = SPIFFS.open(path, "r");
   if (!img) {
     Serial.print(path);
-    Serial.println(" does not appear to exist");
+    Serial.println(" does not exist");
     return 0;
   }
-  imgWidth = img.parseInt();
-  for (int i = 0; i < imgWidth * rows; i++) {
-    pixelArray[i] = (uint8_t)img.parseInt();
+
+  int len = img.size();
+  
+  free(pixelArray);
+  pixelArray = (uint8_t *)malloc(len);
+  for (int i = 0; i < len; i++) {
+    pixelArray[i] = img.read();
   }
   img.close();
-  return 1;*/
+  return 1;
 }
 
 void saveAsLastImage(String path) {
-  for (int i = 0; i < 80; i++) {
-    if (i < path.length()){
-      EEPROM.write(i, path.charAt(i));
-    } else {
-      EEPROM.write(i, ' ');
-    }
-  }
-  EEPROM.commit();
+  File last = SPIFFS.open("/lastImage", "w+");
+  last.print(path);
+  last.close();
 }
 
 String getLastImage() {
-  char fileName[80];
-  for (int i = 0; i < 80; i++) {
-    fileName[i] = EEPROM.read(i);
-  }
-  String path = String(fileName);
-  path.trim();
+  File last = SPIFFS.open("/lastImage", "r");
+  String path = last.readString();
+  last.close();
   return path;
 }
 
@@ -201,8 +203,6 @@ void servicePOV(int hertz){
 void setup(void){
 Serial.begin(115200);
 Serial.setDebugOutput(true);
-EEPROM.begin(80);
-
 
 //////////////////////wifi setup
 //  WiFi.mode(WIFI_AP);
@@ -220,8 +220,8 @@ EEPROM.begin(80);
 //
 //  // start DNS server for a specific domain name
 //  dnsServer.start(DNS_PORT, "www.pov.com", apIP);
-  const char* ssid = "Sonic-4251";
-  const char* password = "4x8wwb45p43v";
+  const char* ssid = "";
+  const char* password = "";
   WiFi.begin(ssid, password);
 
   IPAddress ip(192, 168, 42, 81); // where xx is the desired IP Address
@@ -238,6 +238,7 @@ EEPROM.begin(80);
   }
   
   server.on("/", serveMain);
+  server.on("/init", initializeApp);
   server.on("/saveFile", saveFile);
   server.on("/getSavedFiles", getSavedFiles);  
   server.on("/loadFile", loadFile);
@@ -258,7 +259,7 @@ EEPROM.begin(80);
   strip.begin(); // Initialize pins for output
   strip.show();  // Turn all LEDs off ASAP
 
-  loadImage(getLastImage());
+  imageLoaded = loadImage(getLastImage());
 }
 
 void loop(void){
@@ -266,16 +267,6 @@ void loop(void){
   server.handleClient();
 //  delay(10); 
 
-
-//  uint32_t color = 130535;
-//  for (int i = 0; i < 36; i++) {
-//    strip.setPixelColor(i, color);
-//    strip.show();
-//    delay(250);
-//    strip.setPixelColor(i, 0);
-//    strip.show();
-//  }
-//  
   if (imageLoaded == 1) {
     servicePOV(15);
     delayMicroseconds(2500); //2.5ms = 400hz

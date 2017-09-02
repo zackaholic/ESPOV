@@ -63,13 +63,27 @@ const fileBrowser = (function (containerElement) {
   };
   deleteButton.element.addEventListener('click', deleteButton.deleteFile.bind(deleteButton));
 
-//'save' is confusing here- this button is labeled 'upload'
+//preview sends image data with a predefined filename- overwriting last preview file
+  const previewButton = Object.create(fs);
+  previewButton.element = document.getElementById('filePreviewButton');
+  previewButton.loadPreview = function() {
+    const path = 'name=/img/preview';
+    const data = path + drawingCanvas.getImageString();
+    console.log(data);
+    this.post('http://192.168.42.81/saveFile', data).then((response) => {
+      //something with response?
+    }, (error) => {
+      console.log(error);
+    });
+  };
+  previewButton.element.addEventListener('click', previewButton.loadPreview.bind(previewButton));
+
+//save sends image with unique filename and appends a new file to file selection list
   const saveButton = Object.create(fs);
   saveButton.element = document.getElementById('fileSaveButton');
   saveButton.saveFile = function () {
     const path = 'name=/img/' + 'textFieldValue';
     const data = path + drawingCanvas.getImageString();
-    console.log(data);
     this.post(saveFileURL, data).then((response) => {
       fileList.add(path);
       console.log(path);
