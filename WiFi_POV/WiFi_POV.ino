@@ -14,10 +14,10 @@ uint8_t pixels = 36;  //just for test setup: total pixels in strip for addressin
         //rows is determined by hardware and never changes
 const uint8_t rows = 36;
 uint8_t cols = 30;
+uint8_t *pixelArray;
+uint8_t imageLoaded = 0;
 
 
-
-uint8_t image_received = 0;
 Adafruit_DotStar strip = Adafruit_DotStar(pixels, DOTSTAR_BGR);
 /*
 extern "C" {
@@ -28,10 +28,6 @@ const byte DNS_PORT = 53;
 IPAddress apIP(192, 168, 1, 1);
 DNSServer dnsServer;
 ESP8266WebServer server(80);
-
-uint8_t *pixelArray;
-uint8_t imageLoaded = 0;
-
 
 void serveMain() {
   File root = SPIFFS.open("/main.html", "r");
@@ -44,6 +40,7 @@ void serveMain() {
 }
 
 void getSavedFiles() {
+//now this is returning paths AND data. Do it one at a time
   String fileList = "";
   Dir dir = SPIFFS.openDir("/img");
   while (dir.next()) {
@@ -53,8 +50,8 @@ void getSavedFiles() {
   server.send(200, "text/plain", fileList);
 }
 
-void initializeApp() {
-  String initString = "pixels=";
+void canvasInit() {
+  String initString = "rows=";
   initString += rows;
   server.send(200, "text/plain", initString);
 }
@@ -70,17 +67,21 @@ void deleteFile() {
   }
 }
 
-void loadFile() {
-  String imagePath = server.arg("image");
-  String imageString = "";
+void getFile() {
+  String imagePath = server.arg("name");
+  int imageSize = loadImage(imagePath);
 
-  loadImage(imagePath);
-
-  for (int i = 0; i < 1080; i++) {
+  if (imageSize == 0) {
+    server.send(500, "text/plain", "image file not found");
+  }
+  String imageString = "cols=";
+  imageString += imageSize / rows;
+  imageString += "&data=";
+  
+  for (int i = 0; i < imageSize; i++) {
     imageString += pixelArray[i];
     imageString += ',';
-  }
-  
+  }  
   server.send(200, "text/plain", imageString);
 }
 
@@ -93,8 +94,7 @@ void saveFile() {
   
   free(pixelArray);
   pixelArray = (uint8_t *)malloc(arrayLen);
-  //does file truncation mean i can safely write a shorter file over file
-  //using same name? does it need to be SPIFFS.remove()ed?
+
   File img = SPIFFS.open(path, "w+");
 
   if (!img) {
@@ -120,7 +120,7 @@ void saveFile() {
   img.close();
   imageLoaded = 1;
 
-  //minimal check to make sure file was saved to FS
+  //minimal check to make sure file was saved
   if (SPIFFS.exists(path)) {
     saveAsLastImage(path);
     server.send(200, "text/plain", "file saved");
@@ -136,26 +136,28 @@ void handleNotFound(){
 
 
 uint8_t deleteImage(String path) {
+  //also clear array and stop updating pixels if this was the image
+  //currently loaded into buffer? 
   SPIFFS.remove(path);
 }
 
-uint8_t loadImage(String path) {
+uint16_t loadImage(String path) {
   File img = SPIFFS.open(path, "r");
   if (!img) {
     Serial.print(path);
     Serial.println(" does not exist");
     return 0;
   }
-
-  int len = img.size();
   
+  int len = img.size();
   free(pixelArray);
   pixelArray = (uint8_t *)malloc(len);
+
   for (int i = 0; i < len; i++) {
     pixelArray[i] = img.read();
   }
   img.close();
-  return 1;
+  return len;
 }
 
 void saveAsLastImage(String path) {
@@ -220,8 +222,8 @@ Serial.setDebugOutput(true);
 //
 //  // start DNS server for a specific domain name
 //  dnsServer.start(DNS_PORT, "www.pov.com", apIP);
-  const char* ssid = "";
-  const char* password = "";
+  const char* ssid = "Sonic-4251";
+  const char* password = "4x8wwb45p43v";
   WiFi.begin(ssid, password);
 
   IPAddress ip(192, 168, 42, 81); // where xx is the desired IP Address
@@ -238,10 +240,10 @@ Serial.setDebugOutput(true);
   }
   
   server.on("/", serveMain);
-  server.on("/init", initializeApp);
+  server.on("/canvasInit", canvasInit);
   server.on("/saveFile", saveFile);
   server.on("/getSavedFiles", getSavedFiles);  
-  server.on("/loadFile", loadFile);
+  server.on("/getFile", getFile);
   server.on("/deleteFile", deleteFile);
   server.onNotFound(handleNotFound);
 
@@ -265,11 +267,11 @@ Serial.setDebugOutput(true);
 void loop(void){
   //dnsServer.processNextRequest();
   server.handleClient();
-//  delay(10); 
 
-  if (imageLoaded == 1) {
+  if (imageLoaded) {
     servicePOV(15);
     delayMicroseconds(2500); //2.5ms = 400hz
-
+  } else {
+    yield();
   }
 }
