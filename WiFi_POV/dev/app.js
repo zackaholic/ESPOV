@@ -41,4 +41,4 @@ const App = (function () {
   return module;
 }());
 
-App.initialize();
+//App.initialize();

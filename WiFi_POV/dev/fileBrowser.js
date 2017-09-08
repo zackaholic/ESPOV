@@ -1,21 +1,20 @@
 const fileBrowser = (function (containerElement) {
 
-  const deleteButton = {
-    reqURL: 'http://192.168.42.81/deleteFile',
-    element: document.getElementById('fileDeleteButton'),
-    requestDelete: function () {
-        const fileName = document.getElementById('fileDropdown').value;
-        const data = 'image=/img/' + fileName; 
-      Client.post(this.reqURL, data).then(function (res) {
-        console.log(res);
-        fileList.remove(fileName);
-      }, function (err) {
-        console.log('Delete failed: ' + err);
-      });
-    }
-  }
-  deleteButton.element.addEventListener('click', deleteButton.requestDelete.bind(deleteButton));
-
+  // const deleteButton = {
+  //   reqURL: 'http://192.168.42.81/deleteFile',
+  //   element: document.getElementById('fileDeleteButton'),
+  //   requestDelete: function () {
+  //       const fileName = document.getElementById('fileDropdown').value;
+  //       const data = 'image=/img/' + fileName; 
+  //     Client.post(this.reqURL, data).then(function (res) {
+  //       console.log(res);
+  //       fileList.remove(fileName);
+  //     }, function (err) {
+  //       console.log('Delete failed: ' + err);
+  //     });
+  //   }
+  // }
+  // deleteButton.element.addEventListener('click', deleteButton.requestDelete.bind(deleteButton));
 
 //preview sends image data with a predefined filename- overwriting last preview file
   const previewButton = {
@@ -50,22 +49,64 @@ const fileBrowser = (function (containerElement) {
   }
   saveButton.element.addEventListener('click', saveButton.saveFile.bind(saveButton));
 
-  const loadSavedButton = {
-    reqURL: 'http://192.168.42.81/getFile',
-    element: document.getElementById('fileLoadButton'),
-    loadSave: function() {
-      const path = 'name=/img/' + document.getElementById('fileDropdown').value;
-      console.log('loading: ' + path);
-      Client.post(this.reqURL, path).then(function(res) {
-        console.log(res);
-        //now load into drawing canvas?
-      }, function (err) {
-        console.log(err);
-      });
+  // const loadSavedButton = {
+  //   reqURL: 'http://192.168.42.81/getFile',
+  //   element: document.getElementById('fileLoadButton'),
+  //   loadSave: function() {
+  //     const path = 'name=/img/' + document.getElementById('fileDropdown').value;
+  //     console.log('loading: ' + path);
+  //     Client.post(this.reqURL, path).then(function(res) {
+  //       console.log(res);
+  //       //now load into drawing canvas?
+  //     }, function (err) {
+  //       console.log(err);
+  //     });
+  //   }
+  // }
+  // loadSavedButton.element.addEventListener('click', loadSavedButton.loadSave.bind(loadSavedButton));
+
+
+  const fileEntry = { 
+    setup: function(name) {
+      this.name = name;
+      this.container = document.getElementsByClassName('fileEntryTemplate')[0].cloneNode(true);
+      this.container.className = 'fileEntry';
+      //inherited style from html overrides style from css file, making this step necessary
+      this.container.style = ''; 
+      this.innerElements = this.container.getElementsByTagName("*");
+      console.log(this.innerElements);
+//An arrow function does not create its own this, the this value of the enclosing execution context is used.      
+      this.innerElements[2].addEventListener('click', () => {this.edit()});
+      this.innerElements[3].addEventListener('click', () => {this.load()});
+      this.innerElements[4].addEventListener('click', () => {this.delete()});
+    },
+    loadImageData: function() {
+      console.log('Im getting image data for ' + imagePath);
+      //make server request
+    },
+    add: function() {
+      //add to DOM
+      containerElement.appendChild(this.container);
+    },
+    delete: function() {
+      console.log('deleting', this);
+    },
+    edit: function() {
+      console.log('editing', this);
+    },
+    load: function() {
+      console.log('loading', this);
     }
   }
-  loadSavedButton.element.addEventListener('click', loadSavedButton.loadSave.bind(loadSavedButton));
 
+  function newEntry(name) {
+    const newEntry = Object.create(fileEntry);
+    newEntry.setup(name);
+    newEntry.add();
+  }
+
+  newEntry('myButt');
+  newEntry('myFace');
 
   const fileList = {
     reqURL: 'http://192.168.42.81/getSavedFiles',

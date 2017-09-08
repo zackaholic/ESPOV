@@ -6,7 +6,7 @@ const colorPicker = (function (pickerElement) {
 
   const selectionSwatches = {
     inUse: inUsePalette.getElementsByTagName('div'),
-    main: mainPalette.getElementsByTagName('td')
+    main: mainPalette.getElementsByTagName('div')
   }
 
   let lastElements;

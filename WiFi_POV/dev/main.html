@@ -1,40 +1,43 @@
 <!DOCTYPE HTML>
- <html>
-   <head>
-   </head>
-   <body id="page">
-     <canvas id="drawingCanvas" width="800" height="400" style="touch-action: none; border:1px solid; background-color: #000000"></canvas>
-     <p></p>
+<html>
+  <head>
+  </head>
+  <body id="page">
+    <canvas id="drawingCanvas" width="800" height="400" style="touch-action: none; border:1px solid; background-color: #000000"></canvas>
+    <p></p>
 
-     <div id="colorPicker">
-       <div id="activeColorSwatch">
-       </div>     
-       <div id="inUsePalette">
-       </div>
-       <table id="mainPalette">
-       </table>
-       <div id= "tools">
+    <div id="colorPicker">
+      <div id="activeColorSwatch"></div>     
+      <div id="inUsePalette"></div>
+      <div id="mainPalette"></div>
+      <div id= "tools">
         <div id= "pencil">P</div>
         <div id= "dropper">D</div>
         <div id= "trash">T</div>
       </div>  
-     </div>
-     <div id="fileBrowser">
-       <form>
-        <input type="text" name="fileName" id="fileNameField" placeholder="enter filename"></input>
+    </div>
+    <div id="fileBrowser">
+      <form>
+        <input type="text" name="fileName" id="fileNameField" placeholder="filename"></input>
         <button type="button" id="filePreviewButton">Preview</button>
         <button type="button" id="fileSaveButton">Save</button>
-        <p></p>
-        <select name="files" id="fileDropdown"></select>
-        <button type="button" id="fileLoadButton">Load</button>
-        <button type="button" id="fileDeleteButton">Delete</button>
-       </form>
-     </div>    
-     <link rel="stylesheet" type="text/css" href="main.css"/>
-     <script src="client.js"></script>
-     <script src="drawingCanvas.js"></script>
-     <script src="colorPicker.js"></script>
-     <script src="fileBrowser.js"></script>
-     <script src="app.js"></script>
-   </body>
- </html>
+
+      </form>
+      <div class="fileEntryTemplate" style="position:absolute; left:-500px" >
+        <canvas class="fileEntryCanvas" ></canvas>
+        <div class="fileEntryButtonContainer">
+          <div class="fileEntryButton">E</div>
+          <div class="fileEntryButton">L</div>
+          <div class="fileEntryButton">D</div>        
+        </div>
+      </div>
+    </div>    
+
+    <link rel="stylesheet" type="text/css" href="main.css"/>
+    <script src="client.js"></script>
+    <script src="drawingCanvas.js"></script>
+    <script src="colorPicker.js"></script>
+    <script src="fileBrowser.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

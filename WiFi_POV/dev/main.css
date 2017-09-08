@@ -8,6 +8,7 @@
  width: 150px;
  border: 1px solid;
  padding: 4px;
+ margin-right: 4px;
 }
 #fileUploadButton {
 margin-top: 3px;
@@ -83,5 +84,45 @@ background-color: #9ddfdb;
   width: 20px;
   height: 20px;
   display: inline-block;  
+}
+
+.fileEntry {
+  position: relative;
+  left: 0px;
+  margin: 1px;
+  padding: 4px;
+  background-color: #f0f0f0;
+}
+
+.fileEntryButton {
+  border: 1px solid;
+  width: 20px;
+  height: 20px;
+  background-color: #dfdfdf;
+  display: inline-block;
+  text-align: center;
+  font-size: 18px;
+  font-family: Arial, sans-serif;
+}
+
+.fileEntryButton:hover {
+  background-color: #afafaf;
+}
+
+.fileEntryButton:active {
+  background-color: #af5050;
+}
+
+.fileEntryButtonContainer {
+  float: right;
+  display: inline-block;
+}
+
+.fileEntryCanvas {
+  width: 60px;
+  height: 40px;
+  border: 1px solid;
+  display: inline-block;
+
 }
 
