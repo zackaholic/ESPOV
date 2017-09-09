@@ -1,5 +1,7 @@
 const fileBrowser = (function (containerElement) {
 
+  const files = [];
+
   // const deleteButton = {
   //   reqURL: 'http://192.168.42.81/deleteFile',
   //   element: document.getElementById('fileDeleteButton'),
@@ -38,13 +40,20 @@ const fileBrowser = (function (containerElement) {
     saveFile: function() {
       const name = document.getElementById('fileNameField').value;
       const data = 'name=/img/' + name + drawingCanvas.getImageString();
-      Client.post(this.reqURL, data).then(function (res) {
-        console.log(res);
-        fileList.add(name);
-        document.getElementById('fileNameField').value = '';         
-      }, function (err) {
-        console.log(err);
-      });
+//just here to test
+        const image = drawingCanvas.getImage();
+        newFileEntry(image.name, image.data, image.columns);
+
+      // Client.post(this.reqURL, data).then(function (res) {
+      //   console.log(res);
+      //   //if image successfully saved, add it to file list
+      //   //(name will probably end up being Unix timestamp);
+      //   const image = drawingCanvas.getImage();
+      //   newFileEntry(image.name, image.data, image.columns);
+      //   document.getElementById('fileNameField').value = '';         
+      // }, function (err) {
+      //   console.log(err);
+      // });
     }    
   }
   saveButton.element.addEventListener('click', saveButton.saveFile.bind(saveButton));
@@ -67,46 +76,67 @@ const fileBrowser = (function (containerElement) {
 
 
   const fileEntry = { 
-    setup: function(name) {
+    setup: function(name, imageBuffer, cols) {
       this.name = name;
+      this.image = {
+        data: imageBuffer,
+        columns: cols,
+        rows: 0
+      };
       this.container = document.getElementsByClassName('fileEntryTemplate')[0].cloneNode(true);
       this.container.className = 'fileEntry';
       //inherited style from html overrides style from css file, making this step necessary
       this.container.style = ''; 
       this.innerElements = this.container.getElementsByTagName("*");
-      console.log(this.innerElements);
+      this.previewCanvas = this.innerElements[0];
 //An arrow function does not create its own this, the this value of the enclosing execution context is used.      
       this.innerElements[2].addEventListener('click', () => {this.edit()});
       this.innerElements[3].addEventListener('click', () => {this.load()});
       this.innerElements[4].addEventListener('click', () => {this.delete()});
+
+      this.renderPreviewCanvas();
     },
     loadImageData: function() {
       console.log('Im getting image data for ' + imagePath);
       //make server request
     },
     add: function() {
-      //add to DOM
+      files.push(this);
       containerElement.appendChild(this.container);
     },
     delete: function() {
       console.log('deleting', this);
     },
     edit: function() {
+      drawingCanvas.loadImage(this.name, this.image);
       console.log('editing', this);
     },
     load: function() {
       console.log('loading', this);
+    },
+    color8To24Bit: function(color) {
+      const red = color & 0b11100000;
+      const green = color & 0b00011100;
+      const blue = color & 0b00000011;
+      return `rgb(${red}, ${green}, ${blue})`;
+    },
+    renderPreviewCanvas: function() {
+      const ctx = this.previewCanvas.getContext('2d');
+      this.image.data.forEach((value, index) => {
+        ctx.fillStyle = value;
+        //2 here is 2 pixels per data point. Maybe turn this into a property
+        ctx.fillRect(index % this.image.columns * 2,
+                     Math.floor(index / this.image.columns) * 2,
+                     2, 2);
+      });
     }
   }
 
-  function newEntry(name) {
+  function newFileEntry(name, imageBuffer, cols) {
     const newEntry = Object.create(fileEntry);
-    newEntry.setup(name);
+    newEntry.setup(name, imageBuffer, cols);
     newEntry.add();
   }
-
-  newEntry('myButt');
-  newEntry('myFace');
 
   const fileList = {
     reqURL: 'http://192.168.42.81/getSavedFiles',

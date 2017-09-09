@@ -8,7 +8,7 @@ Module API:
 
 const drawingCanvas = (function (canvas) {
   const ctx = canvas.getContext('2d');
-  const imageBuffer = [];  
+  let imageBuffer = [];  
   let pixelSize = 20;
   let drawingColor = 'rgb(0, 0, 0)';
   let rows;
@@ -36,8 +36,8 @@ const drawingCanvas = (function (canvas) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);    
   }
 
-  function drawPixel (index) {
-    ctx.fillStyle = drawingColor;
+  function drawPixel (index, color) {
+    ctx.fillStyle = color;
 
     let x = index % cols;
     let y = Math.floor(index / cols);
@@ -51,8 +51,8 @@ const drawingCanvas = (function (canvas) {
   }
   
   function drawCanvasFromBuffer (buff) {
+    clearCanvas();
     buff.forEach((value, index) => {
-      const color = color24BitToString(color8to24bit(value));
       drawPixel(index, value);
     }) 
   }
@@ -67,8 +67,8 @@ const drawingCanvas = (function (canvas) {
 
   function color24To8Bit(color) {
     //color comes in 'rgb(255, 255, 255)' string
-    //images will be mostly black- save some effort
     if (color === 'rgb(0, 0, 0)') {
+      //shave a little time- most images contain mostly black
       return 0;
     }
     const rgb = color.match(/[0-9]+/g);        
@@ -109,8 +109,8 @@ const drawingCanvas = (function (canvas) {
   function mouseDown(evt) {
     canvas.addEventListener('mousemove', mouseMove);
     const mousePos = getMousePos(evt);
-    //set drawing color in case mouse moves into drawable area
-    drawingColor = colorPicker.getActiveColor();
+    // //set drawing color in case mouse moves into drawable area
+    // drawingColor = colorPicker.getActiveColor();
     
     if (isDrawable(mousePos)) {
       const pixelIndex = pixelIndexFromCoordinates(mousePos);
@@ -130,12 +130,31 @@ const drawingCanvas = (function (canvas) {
 
   const module = {};
 
+  module.getImage = function() {
+    //canvas should use a working buffer for pixel manipulation 
+    //but export a file-ready buffer truncated to column length
+    //for image file creation
+    return {
+      name: Date.now(),
+      data: imageBuffer.slice(0, imageBuffer.length),
+      columns: cols
+    }
+  }
+
   module.getImageString = function () {
     return canvasToString();
   }
 
-  module.loadImage = function (data) {
-    drawCanvasFromBuffer(data);
+  module.loadImage = function (name, image) {
+    //name = image.name  //preserve name to save as same image
+    cols = image.columns;
+    //just pass around full size canvas arrays for simplicity
+    imageBuffer = image.data.slice(0, image.data.length);
+    drawCanvasFromBuffer(image.data);
+  }
+
+  module.setDrawingColor = function(color) {
+    drawingColor = color;
   }
 
   module.initialize = function (r, c) {

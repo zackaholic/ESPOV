@@ -118,6 +118,7 @@ const colorPicker = (function (pickerElement) {
     setBorder(evt.target.style.color, activeColor);
     activeColor = evt.target.style.color;
     addToInUsePalette(activeColor);
+    drawingCanvas.setDrawingColor(activeColor);
   }
 
   function mouseOver(evt) {

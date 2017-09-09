@@ -13,9 +13,11 @@ const App = (function () {
     return obj;
   }
 
-  module.initialize = function () {
     //here just for testing
-    // drawingCanvas.initialize(36, 30);
+     drawingCanvas.initialize(36, 30);
+
+
+  module.initialize = function () {
     Client.get('http://192.168.42.81/canvasInit')
     .then(function (res) {
       const canvasInit = qsToObject(res);
