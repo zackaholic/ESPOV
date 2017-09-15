@@ -1,11 +1,24 @@
 #page {
 
 }
+#canvasControls {
+  border: 1px solid;
+  width: 150px;
+  margin: 0px 0px 3px 0px;
+}
+#canvasControls *{
+  display: inline-block;
+
+  margin: 3px;
+}
+
 #fileBrowser {
  position: relative;
  float: left;
  display: inline-block;
  width: 150px;
+ height: 400px;
+ overflow-y: auto;
  border: 1px solid;
  padding: 4px;
  margin-right: 4px;

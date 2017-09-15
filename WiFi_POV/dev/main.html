@@ -4,7 +4,13 @@
   </head>
   <body id="page">
     <canvas id="drawingCanvas" width="800" height="400" style="touch-action: none; border:1px solid; background-color: #000000"></canvas>
-    <p></p>
+    <form id="canvasControls">
+
+      <button type="button" id="filePreviewButton">Preview</button>
+      <button type="button" id="fileSaveButton">Save</button>
+
+    </form>
+
 
     <div id="colorPicker">
       <div id="activeColorSwatch"></div>     
@@ -17,12 +23,6 @@
       </div>  
     </div>
     <div id="fileBrowser">
-      <form>
-        <input type="text" name="fileName" id="fileNameField" placeholder="filename"></input>
-        <button type="button" id="filePreviewButton">Preview</button>
-        <button type="button" id="fileSaveButton">Save</button>
-
-      </form>
       <div class="fileEntryTemplate" style="position:absolute; left:-500px" >
         <canvas class="fileEntryCanvas" width="60" height="40"></canvas>
         <div class="fileEntryButtonContainer">

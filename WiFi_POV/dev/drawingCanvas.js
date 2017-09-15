@@ -1,14 +1,12 @@
-/*
-All canvas drawing and interaction done here
-Module API:
-  -setup canvas based on physical hardware
-  -get current image as pixel data 
-  -load image from pixel data
-*/
+
 
 const drawingCanvas = (function (canvas) {
   const ctx = canvas.getContext('2d');
-  let imageBuffer = [];  
+  const image = {
+    id: 0,
+    data: [],
+    width: 30
+  }
   let pixelSize = 20;
   let drawingColor = 'rgb(0, 0, 0)';
   let rows;
@@ -33,7 +31,7 @@ const drawingCanvas = (function (canvas) {
   }
 
   function clearCanvas () {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);       
   }
 
   function drawPixel (index, color) {
@@ -50,9 +48,9 @@ const drawingCanvas = (function (canvas) {
     return (mousePos.x < pixelSize * cols && mousePos.y < pixelSize * rows);
   }
   
-  function drawCanvasFromBuffer (buff) {
+  function redrawCanvas (buff) {
     clearCanvas();
-    buff.forEach((value, index) => {
+    image.data.forEach((value, index) => {
       drawPixel(index, value);
     }) 
   }
@@ -67,7 +65,7 @@ const drawingCanvas = (function (canvas) {
 
   function color24To8Bit(color) {
     //color comes in 'rgb(255, 255, 255)' string
-    if (color === 'rgb(0, 0, 0)') {
+    if (color === 'rgb(0, 0, 0)' || color === undefined) {
       //shave a little time- most images contain mostly black
       return 0;
     }
@@ -80,7 +78,7 @@ const drawingCanvas = (function (canvas) {
   }
 
   function canvasToString() {
-    const pixelString = imageBuffer.map(color24To8Bit).join();
+    const pixelString = image.data.map(color24To8Bit).join();
     return '&width=' + cols + '&image=' + pixelString;
   }
 
@@ -91,8 +89,8 @@ const drawingCanvas = (function (canvas) {
       if (isDrawable(mousePos)){
         const pixelIndex = pixelIndexFromCoordinates(mousePos);
 
-        if (imageBuffer[pixelIndex] !== drawingColor) {
-          imageBuffer[pixelIndex] = drawingColor;
+        if (image.data[pixelIndex] !== drawingColor) {
+          image.data[pixelIndex] = drawingColor;
           drawPixel(pixelIndex, drawingColor);
         }
       }
@@ -109,17 +107,15 @@ const drawingCanvas = (function (canvas) {
   function mouseDown(evt) {
     canvas.addEventListener('mousemove', mouseMove);
     const mousePos = getMousePos(evt);
-    // //set drawing color in case mouse moves into drawable area
-    // drawingColor = colorPicker.getActiveColor();
-    
+
     if (isDrawable(mousePos)) {
       const pixelIndex = pixelIndexFromCoordinates(mousePos);
 
-      if (imageBuffer[pixelIndex] === drawingColor) {
+      if (image.data[pixelIndex] === drawingColor) {
         return;
       }
       
-      imageBuffer[pixelIndex] = drawingColor;
+      image.data[pixelIndex] = drawingColor;
       drawPixel(pixelIndex, drawingColor);
     }
   }
@@ -127,30 +123,81 @@ const drawingCanvas = (function (canvas) {
   canvas.addEventListener('mousedown', mouseDown);
   canvas.addEventListener('mouseup', mouseUp);
 
+//preview sends image data with a predefined filename- overwriting last preview file
+  const previewButton = {
+    reqURL: 'http://192.168.42.81/saveFile',
+    element: document.getElementById('filePreviewButton'),
+    loadPreview: function() {
+      const path = 'name=/img/preview';
+      const data =  path + drawingCanvas.getImageString();
+      Client.post(this.reqURL, data).then(function (res) {
+        console.log(res);
+      }, function (err) {
+        console.log(err);
+      });
+    }
+  }
+  previewButton.element.addEventListener('click', previewButton.loadPreview.bind(previewButton));
+
+  const saveButton = {
+    reqURL: 'http://192.168.42.81/saveFile',
+    element: document.getElementById('fileSaveButton'),
+    saveFile: function() {
+//just here to test
+        //pad up the array
+        for (let i = 0; i < rows * cols; i++) {
+          image.data[i] = image.data[i] === undefined
+                        ? 'rgb(0, 0, 0)'
+                        : image.data[i];
+        }
+        if (image.id === 0) {
+          image.id = Date.now();
+          fileBrowser.addNew(image);
+          resetCanvas();
+        } else {
+          fileBrowser.updateExisting(image);
+          resetCanvas();
+        }
+      // Client.post(this.reqURL, data).then(function (res) {
+      //   console.log(res);
+      //   //if image successfully saved, add it to file list
+
+        // const image = drawingCanvas.getImage();
+        // files.createNew(image.name, image.data, image.columns);
+
+      // }, function (err) {
+      //   console.log(err);
+      // });
+    }    
+  }
+  saveButton.element.addEventListener('click', saveButton.saveFile.bind(saveButton));
+
 
   const module = {};
 
-  module.getImage = function() {
-    //canvas should use a working buffer for pixel manipulation 
-    //but export a file-ready buffer truncated to column length
-    //for image file creation
-    return {
-      name: Date.now(),
-      data: imageBuffer.slice(0, imageBuffer.length),
-      columns: cols
-    }
+
+  function resetCanvas() {
+    image.id = 0;
+    image.data.length = 0;
+    image.width = 30;
+    clearCanvas();
+  }
+
+  module.createImage = function() {
+    image.id = image.id > 0 ? image.id : Data.now();
+    return image;
   }
 
   module.getImageString = function () {
     return canvasToString();
   }
 
-  module.loadImage = function (name, image) {
-    //name = image.name  //preserve name to save as same image
-    cols = image.columns;
-    //just pass around full size canvas arrays for simplicity
-    imageBuffer = image.data.slice(0, image.data.length);
-    drawCanvasFromBuffer(image.data);
+  module.loadFile = function (file) {
+    image.id = file.id;
+    image.data = file.data.slice();
+    image.width = file.width;
+
+    redrawCanvas();
   }
 
   module.setDrawingColor = function(color) {
@@ -160,9 +207,6 @@ const drawingCanvas = (function (canvas) {
   module.initialize = function (r, c) {
     rows = r;
     cols = c;
-    for (let i = 0; i < rows * cols; i++) {
-      imageBuffer[i] = 'rgb(0, 0, 0)';
-    }
   }
 
   return module;

@@ -1,87 +1,85 @@
 const fileBrowser = (function (containerElement) {
 
-  const files = [];
 
-  // const deleteButton = {
-  //   reqURL: 'http://192.168.42.81/deleteFile',
-  //   element: document.getElementById('fileDeleteButton'),
-  //   requestDelete: function () {
-  //       const fileName = document.getElementById('fileDropdown').value;
-  //       const data = 'image=/img/' + fileName; 
-  //     Client.post(this.reqURL, data).then(function (res) {
-  //       console.log(res);
-  //       fileList.remove(fileName);
-  //     }, function (err) {
-  //       console.log('Delete failed: ' + err);
-  //     });
-  //   }
-  // }
-  // deleteButton.element.addEventListener('click', deleteButton.requestDelete.bind(deleteButton));
+  const files = {
+    fileArray: [],
+    createNew: function(image) {
+      const entry = Object.create(fileEntry);
+      entry.setup(image);
+      this.fileArray.push(entry);
+      containerElement.appendChild(entry.container);
 
-//preview sends image data with a predefined filename- overwriting last preview file
-  const previewButton = {
-    reqURL: 'http://192.168.42.81/saveFile',
-    element: document.getElementById('filePreviewButton'),
-    loadPreview: function() {
-      const path = 'name=/img/preview';
-      const data =  path + drawingCanvas.getImageString();
-      Client.post(this.reqURL, data).then(function (res) {
-        console.log(res);
+      //localStorage.setItem(newFile.name, JSON.stringify(newFile.image));
+
+    }, 
+    exists: function(id) {
+      return this.fileArray.findIndex(function(e) {
+        return e.image.id === id;
+      });
+    },
+    add: function(newFile){
+
+    },
+    updateImage: function(file, index) {
+      this.fileArray[index].replaceImage(file.data.slice(), file.width);
+      //also overwrite local storage
+      //localStorage.setItem(file.id, JSON.stringify(file));
+
+    },
+    remove: function(name) {
+      let i;
+      if (i = this.exists(name) > -1) {
+        this.fileArray.splice(i, 1);
+      }
+    },
+    refresh: function () {
+      //get list of filenames from server
+      //compare with local storage
+      //create file object if necessary with name only
+      //later async load image data
+      Client.get('http://192.168.42.81/getSavedFiles')
+      .then(function (res) {       
+        res.split('\n')
+        .filter(function(e) {
+          return e.length > 0})
+        .map(function(e) {
+          return e.replace('/img/', '')})
+        .forEach(function(e) {
+          if (files.exists(e) == -1) {
+            files.createNew(e);     
+          }         
+        });        
       }, function (err) {
         console.log(err);
       });
-    }
+    },     
   }
-  previewButton.element.addEventListener('click', previewButton.loadPreview.bind(previewButton));
 
-  const saveButton = {
-    reqURL: 'http://192.168.42.81/saveFile',
-    element: document.getElementById('fileSaveButton'),
-    saveFile: function() {
-      const name = document.getElementById('fileNameField').value;
-      const data = 'name=/img/' + name + drawingCanvas.getImageString();
-//just here to test
-        const image = drawingCanvas.getImage();
-        newFileEntry(image.name, image.data, image.columns);
+//this needs to happen async for every file created by name only
+  function loadImageData(file) {
+    console.log('Im getting image data for ' + file.name);
+      console.log('loading: ' + file.name);
+      Client.post('http://192.168.42.81/getImageData', `name=/img/${this.image.id}`)
+      .then(function(res) {
+        console.log(res);
+        //file.image = res; Object.assign?
+        //now render preview canvas
+      }, function (err) {
+        console.log(err);
+      });
+    }      
 
-      // Client.post(this.reqURL, data).then(function (res) {
-      //   console.log(res);
-      //   //if image successfully saved, add it to file list
-      //   //(name will probably end up being Unix timestamp);
-      //   const image = drawingCanvas.getImage();
-      //   newFileEntry(image.name, image.data, image.columns);
-      //   document.getElementById('fileNameField').value = '';         
-      // }, function (err) {
-      //   console.log(err);
-      // });
-    }    
-  }
-  saveButton.element.addEventListener('click', saveButton.saveFile.bind(saveButton));
 
-  // const loadSavedButton = {
-  //   reqURL: 'http://192.168.42.81/getFile',
-  //   element: document.getElementById('fileLoadButton'),
-  //   loadSave: function() {
-  //     const path = 'name=/img/' + document.getElementById('fileDropdown').value;
-  //     console.log('loading: ' + path);
-  //     Client.post(this.reqURL, path).then(function(res) {
-  //       console.log(res);
-  //       //now load into drawing canvas?
-  //     }, function (err) {
-  //       console.log(err);
-  //     });
-  //   }
-  // }
-  // loadSavedButton.element.addEventListener('click', loadSavedButton.loadSave.bind(loadSavedButton));
-
+  //standardizing image object to simplify communication between file browser, 
+  //canvas editor and server
 
   const fileEntry = { 
-    setup: function(name, imageBuffer, cols) {
-      this.name = name;
+    setup: function(image) {
+//      object destructuring?
       this.image = {
-        data: imageBuffer,
-        columns: cols,
-        rows: 0
+        id: image.id,
+        data: image.data.slice(),
+        width: image.width,
       };
       this.container = document.getElementsByClassName('fileEntryTemplate')[0].cloneNode(true);
       this.container.className = 'fileEntry';
@@ -89,27 +87,40 @@ const fileBrowser = (function (containerElement) {
       this.container.style = ''; 
       this.innerElements = this.container.getElementsByTagName("*");
       this.previewCanvas = this.innerElements[0];
-//An arrow function does not create its own this, the this value of the enclosing execution context is used.      
+
       this.innerElements[2].addEventListener('click', () => {this.edit()});
       this.innerElements[3].addEventListener('click', () => {this.load()});
       this.innerElements[4].addEventListener('click', () => {this.delete()});
-
+      
       this.renderPreviewCanvas();
-    },
-    loadImageData: function() {
-      console.log('Im getting image data for ' + imagePath);
-      //make server request
-    },
-    add: function() {
-      files.push(this);
-      containerElement.appendChild(this.container);
+
     },
     delete: function() {
-      console.log('deleting', this);
+      //TESTING 
+        containerElement.removeChild(this.container);              
+        //localStorage.removeItem(this.image.id);
+        console.log(localStorage.length);          
+      Client.post('http://192.168.42.81/deleteFile', `image=/img/${this.image.id}`)
+      .then(function (res) {
+        console.log(res);
+        console.log('deleting', this);        
+        files.remove(this.image.id);
+        containerElement.removeChild(this.container);    
+        localStorage.removeItem(this.image.id);
+     
+      }, function (err) {
+        console.log('Delete failed: ' + err);
+      });
     },
     edit: function() {
-      drawingCanvas.loadImage(this.name, this.image);
+      drawingCanvas.loadFile(this.image);
       console.log('editing', this);
+    },   
+    replaceImage: function(data, width) {
+      this.image.data = data;
+      this.image.width = width;
+
+      this.renderPreviewCanvas();
     },
     load: function() {
       console.log('loading', this);
@@ -122,58 +133,39 @@ const fileBrowser = (function (containerElement) {
     },
     renderPreviewCanvas: function() {
       const ctx = this.previewCanvas.getContext('2d');
+      const scale = 2;
       this.image.data.forEach((value, index) => {
         ctx.fillStyle = value;
-        //2 here is 2 pixels per data point. Maybe turn this into a property
-        ctx.fillRect(index % this.image.columns * 2,
-                     Math.floor(index / this.image.columns) * 2,
-                     2, 2);
+        ctx.fillRect(index % this.image.width * scale,
+                     Math.floor(index / this.image.width) * scale,
+                     scale, scale);
       });
     }
   }
 
-  function newFileEntry(name, imageBuffer, cols) {
+  function newFileEntry(file) {
     const newEntry = Object.create(fileEntry);
-    newEntry.setup(name, imageBuffer, cols);
+    newEntry.setup(file.id, file.data.slice(), file.width);
     newEntry.add();
   }
 
-  const fileList = {
-    reqURL: 'http://192.168.42.81/getSavedFiles',
-    element: document.getElementById('fileDropdown'),
-    files: [],
-    refresh: function () {
-      Client.get(this.reqURL).then(function (res) {       
-        res.split('\n')
-        .filter(function(e) {
-          return e.length > 0})
-        .map(function(e) {
-          return e.replace('/img/', '')})
-        .forEach(function(e) {
-          fileList.add(e);              
-        });        
-      }, function (err) {
-        console.log(err);
-      });
-    },
-    remove: function (filePath) {
-      let index;
-      if ((index = this.files.indexOf(filePath)) > -1) {
-        this.files.splice(index, 1);
-        this.element.remove(index);
-      }
-    },
-    add: function (filePath) {
-      this.files.push(filePath);
-      const file = document.createElement('option');
-      file.text = filePath;
-      this.element.add(file);
-    }
-  }
 
   const module = {};
 
-  module.refresh = fileList.refresh.bind(fileList);
+  module.addNew = function(image) {
+    files.createNew(image);
+  }
+
+  module.updateExisting = function(image) {
+    const index = files.exists(image.id);
+    if (index > -1) {
+      files.updateImage(image, index);
+    } else {
+      throw new Error('File cannot be updated because it doesn\'t exist');
+    }
+  }
+
+  //module.refresh = fileList.refresh.bind(fileList);
 
   return module;
 
