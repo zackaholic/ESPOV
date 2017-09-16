@@ -40,7 +40,7 @@ void serveMain() {
 }
 
 void getSavedFiles() {
-//now this is returning paths AND data. Do it one at a time
+//returns list of file names, no data
   String fileList = "";
   Dir dir = SPIFFS.openDir("/img");
   while (dir.next()) {
@@ -57,17 +57,17 @@ void canvasInit() {
 }
 
 void deleteFile() {
-  String imagePath = server.arg("image");
-  SPIFFS.remove(imagePath);
-  File img = SPIFFS.open(imagePath, "r");
+  String path = server.arg("name");
+  SPIFFS.remove(path);
+  File img = SPIFFS.open(path, "r");
   if (!img) {
     server.send(200, "text/plain", "Success");
   } else {
-    server.send(200, "text/plain", "Error");
+    server.send(500, "text/plain", "Error");
   }
 }
 
-void getFile() {
+void getImageData() {
   String imagePath = server.arg("name");
   int imageSize = loadImage(imagePath);
 
@@ -87,11 +87,12 @@ void getFile() {
 
 void saveFile() {
   String path = server.arg("name");
+  path.trim();
   String recImage = server.arg("image");
   String width = server.arg("width");
   cols = width.toInt();
   int arrayLen = cols * rows;
-  
+
   free(pixelArray);
   pixelArray = (uint8_t *)malloc(arrayLen);
 
@@ -122,12 +123,12 @@ void saveFile() {
 
   //minimal check to make sure file was saved
   if (SPIFFS.exists(path)) {
-    saveAsLastImage(path);
+//    saveAsLastImage(path);
     server.send(200, "text/plain", "file saved");
   } else {
     server.send(500, "text/plain", "error: file not saved");
   }
-
+  getSavedFiles();
 }
 
 void handleNotFound(){
@@ -135,13 +136,25 @@ void handleNotFound(){
 }
 
 
-uint8_t deleteImage(String path) {
-  //also clear array and stop updating pixels if this was the image
-  //currently loaded into buffer? 
-  SPIFFS.remove(path);
+//uint8_t deleteImage(String path) {
+//  //also clear array and stop updating pixels if this was the image
+//  //currently loaded into buffer? 
+//  SPIFFS.remove(path);
+//}
+
+void displaySaved() {
+  String path = server.arg("name");
+  path.trim();
+  if (loadImage(path)) {
+    server.send(200, "text/plain", "loading success");  
+  } else {
+    server.send(500, "text/plain", "file may not exist");
+  }
 }
 
 uint16_t loadImage(String path) {
+  Serial.print("loading ");
+  Serial.println(path);
   File img = SPIFFS.open(path, "r");
   if (!img) {
     Serial.print(path);
@@ -157,6 +170,9 @@ uint16_t loadImage(String path) {
     pixelArray[i] = img.read();
   }
   img.close();
+  
+  saveAsLastImage(path);
+  
   return len;
 }
 
@@ -222,8 +238,8 @@ Serial.setDebugOutput(true);
 //
 //  // start DNS server for a specific domain name
 //  dnsServer.start(DNS_PORT, "www.pov.com", apIP);
-  const char* ssid = "Sonic-4251";
-  const char* password = "4x8wwb45p43v";
+  const char* ssid = "XXXX";
+  const char* password = "XXXX";
   WiFi.begin(ssid, password);
 
   IPAddress ip(192, 168, 42, 81); // where xx is the desired IP Address
@@ -243,7 +259,8 @@ Serial.setDebugOutput(true);
   server.on("/canvasInit", canvasInit);
   server.on("/saveFile", saveFile);
   server.on("/getSavedFiles", getSavedFiles);  
-  server.on("/getFile", getFile);
+  server.on("/getFile", getImageData);
+  server.on("/displaySaved", displaySaved);
   server.on("/deleteFile", deleteFile);
   server.onNotFound(handleNotFound);
 
@@ -255,7 +272,7 @@ Serial.setDebugOutput(true);
   if (!SPIFFS.begin()) {
     Serial.println("Failed to mount file system");
   }
-
+  //SPIFFS.format();
 
 ///////////////////dotstar setup
   strip.begin(); // Initialize pins for output

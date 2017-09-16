@@ -63,23 +63,34 @@ const drawingCanvas = (function (canvas) {
     return `rgb(${red}, ${green}, ${blue})`;
   }
 
-  function color24To8Bit(color) {
-    //color comes in 'rgb(255, 255, 255)' string
-    if (color === 'rgb(0, 0, 0)' || color === undefined) {
-      //shave a little time- most images contain mostly black
-      return 0;
+  function padImageForSaving() {
+    //array will be ragged- fill in non-values with black pixel
+    for(let i = 0; i < rows * cols; i++) {
+      if (image.data[i] === undefined) {
+        image.data[i] = 'rgb(0, 0, 0)';
+        }    
     }
-    const rgb = color.match(/[0-9]+/g);        
-    var red = +rgb[0];
-    var green = +rgb[1];
-    var blue = +rgb[2];
-    var color8 = (rgb[0]) | (green >> 3) | blue >> 6;
-    return color8;
   }
 
-  function canvasToString() {
-    const pixelString = image.data.map(color24To8Bit).join();
-    return '&width=' + cols + '&image=' + pixelString;
+  function createUploadString() {
+    //image data array will be ragged- loop through every index
+    const pixels = image.data.slice();
+
+    for(let i = 0; i < rows * cols; i++) {
+      if (pixels[i] === undefined || pixels[i] === 'rgb(0, 0, 0)') {
+        pixels[i] = 0;
+      } else {
+        const rgb = pixels[i].match(/[0-9]+/g);        
+        var red = +rgb[0];
+        var green = +rgb[1];
+        var blue = +rgb[2];
+        var color8 = (rgb[0]) | (green >> 3) | blue >> 6;
+        pixels[i] = color8;        
+      }
+    }
+    return `name=/img/${image.id}
+            &width=${image.width}
+            &image=${pixels.join()}`
   }
 
   function mouseMove(evt) {
@@ -140,34 +151,47 @@ const drawingCanvas = (function (canvas) {
   previewButton.element.addEventListener('click', previewButton.loadPreview.bind(previewButton));
 
   const saveButton = {
-    reqURL: 'http://192.168.42.81/saveFile',
+
     element: document.getElementById('fileSaveButton'),
     saveFile: function() {
-//just here to test
-        //pad up the array
-        for (let i = 0; i < rows * cols; i++) {
-          image.data[i] = image.data[i] === undefined
-                        ? 'rgb(0, 0, 0)'
-                        : image.data[i];
-        }
-        if (image.id === 0) {
-          image.id = Date.now();
-          fileBrowser.addNew(image);
-          resetCanvas();
-        } else {
+      //TESTING//////////////////////////////////////
+      // for (let i = 0; i < rows * cols; i++) {
+      //   image.data[i] = image.data[i] === undefined
+      //                 ? 'rgb(0, 0, 0)'
+      //                 : image.data[i];
+      // }
+      // if (image.id === 0) {
+      //   image.id = Date.now();
+      //   fileBrowser.addNew(image);
+      //   resetCanvas();
+      // } else {
+      //   fileBrowser.updateExisting(image);
+      //   resetCanvas();
+      // }
+      //TESTING////////////////////////////////////// 
+      padImageForSaving();
+
+      let overwriting = false;
+      if (image.id > 0) {
+        overwriting = true;        
+      } else {
+        image.id = Date.now();
+      }
+
+      Client.post('http://192.168.42.81/saveFile', createUploadString())
+      .then(function (res) {
+        console.log(res);
+        //if image successfully saved, add it to file list or update existing
+        if (overwriting) {
           fileBrowser.updateExisting(image);
           resetCanvas();
+        } else {
+          fileBrowser.addNew(image);
+          resetCanvas();          
         }
-      // Client.post(this.reqURL, data).then(function (res) {
-      //   console.log(res);
-      //   //if image successfully saved, add it to file list
-
-        // const image = drawingCanvas.getImage();
-        // files.createNew(image.name, image.data, image.columns);
-
-      // }, function (err) {
-      //   console.log(err);
-      // });
+      }, function (err) {
+        console.log(err);
+      });
     }    
   }
   saveButton.element.addEventListener('click', saveButton.saveFile.bind(saveButton));
@@ -183,14 +207,14 @@ const drawingCanvas = (function (canvas) {
     clearCanvas();
   }
 
-  module.createImage = function() {
-    image.id = image.id > 0 ? image.id : Data.now();
-    return image;
-  }
+  // module.createImage = function() {
+  //   image.id = image.id > 0 ? image.id : Data.now();
+  //   return image;
+  // }
 
-  module.getImageString = function () {
-    return canvasToString();
-  }
+  // module.getImageString = function () {
+  //   return canvasToString();
+  // }
 
   module.loadFile = function (file) {
     image.id = file.id;

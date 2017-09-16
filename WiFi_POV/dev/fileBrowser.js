@@ -96,17 +96,19 @@ const fileBrowser = (function (containerElement) {
 
     },
     delete: function() {
-      //TESTING 
-        containerElement.removeChild(this.container);              
+      //TESTING//////////////////////////////////////// 
+        //containerElement.removeChild(this.container);  
+      //TESTING////////////////////////////////////////              
         //localStorage.removeItem(this.image.id);
-        console.log(localStorage.length);          
-      Client.post('http://192.168.42.81/deleteFile', `image=/img/${this.image.id}`)
+      const file = this;
+      Client.post('http://192.168.42.81/deleteFile', `name=/img/${file.image.id}`)
       .then(function (res) {
         console.log(res);
-        console.log('deleting', this);        
-        files.remove(this.image.id);
-        containerElement.removeChild(this.container);    
-        localStorage.removeItem(this.image.id);
+        //oops, got the window object here...
+        console.log('deleting', file);        
+        files.remove(file.image.id);
+        containerElement.removeChild(file.container);    
+        //localStorage.removeItem(this.image.id);
      
       }, function (err) {
         console.log('Delete failed: ' + err);
@@ -123,7 +125,14 @@ const fileBrowser = (function (containerElement) {
       this.renderPreviewCanvas();
     },
     load: function() {
-      console.log('loading', this);
+      const file = this;
+      console.log('loading', `name=/img/${file.image.id}`);
+      Client.post('http://192.168.42.81/displaySaved', `name=/img/${file.image.id}`)
+      .then(function (res) {
+        console.log(res);
+      }, function (err) {
+        console.log(err);
+      })
     },
     color8To24Bit: function(color) {
       const red = color & 0b11100000;
