@@ -13,16 +13,15 @@ const App = (function () {
     return obj;
   }
 
-    //here just for testing
-     drawingCanvas.initialize(36, 30);
-
+//here just for testing
+drawingCanvas.initialize(36, 30);
 
   module.initialize = function () {
     Client.get('http://192.168.42.81/canvasInit')
     .then(function (res) {
       const canvasInit = qsToObject(res);
       drawingCanvas.initialize(canvasInit.rows, 30);
-      //don't need to return anything here, right??? this is chaining not forking???
+      //don't need to return anything here, right???
     }, 
     function (err) {
       console.log(err);

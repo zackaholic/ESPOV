@@ -1,20 +1,5 @@
 const colorPicker = (function (pickerElement) {
 
-  const inUsePalette = document.getElementById('inUsePalette');
-  const mainPalette =  document.getElementById('mainPalette');
-  const activeColorSwatch =  document.getElementById('activeColorSwatch');
-
-  const selectionSwatches = {
-    inUse: inUsePalette.getElementsByTagName('div'),
-    main: mainPalette.getElementsByTagName('div')
-  }
-
-  let lastElements;
-  let currentElements;  
-  let inUseColors = [];
-  let activeColor = '#000000';
-
-
   function createColorPalette () {
     const palette = [];
     let index = 0;
@@ -28,72 +13,29 @@ const colorPicker = (function (pickerElement) {
     return palette;
   }
 
-  function createMainPalette() {
-    let row;
-    let e;
-    const colorPalette = createColorPalette();
-    let swatches = document.createDocumentFragment();
-    colorPalette.forEach((color, index) => {
-
-      let swatch = document.createElement("div");
-      swatch.style.color = color;
-      swatch.style.backgroundColor = color;
-      swatch.style.borderColor = color;
-
-      swatches.appendChild(swatch);   
-    });
-    mainPalette.appendChild(swatches);
+  function createSwatch(color, parent) {
+    const swatch = document.createElement('div');
+    swatch.style.color = color;
+    swatch.style.backgroundColor = color;
+    swatch.style.borderColor = color;
+    parent.appendChild(swatch);
   }
 
-  // function loadMainPalette() {
-  //   let row;
-  //   let e;
-  //   const palette = createColorPalette();
-  //   let swatches = document.createDocumentFragment();
-    
-  //   palette.forEach((color, index) => {
-  //     if (index % 16 == 0){
-  //       row = document.createElement("tr");
-  //       swatches.appendChild(row);
-  //       e = document.createElement("td");
-  //       row.appendChild(e);
-  //       e.style.color = color;
-  //     } else {
-  //       e = document.createElement("td");
-  //       row.appendChild(e);
-  //       e.style.color = color;
-  //     } 
-  //     e.style.backgroundColor =  color;
-  //     e.style.borderColor = color;
-   
-  //   });
-  //   mainPalette.appendChild(swatches);
-  // }
-
-  function setBorder(color, previousColor) {
-    Array.prototype.forEach.call(selectionSwatches.inUse, (element) => {
-      if (element.style.color === previousColor) {
-        element.style.borderColor = element.style.color;
+  const mainPalette = {
+    element : document.getElementById('mainPalette'),
+    palette : createColorPalette(),
+    createSwatches: function() {
+      for (let i = 0; i < this.palette.length; i++) {
+        createSwatch(this.palette[i], this.element);
       }
-      if (element.style.color === color) {
-        element.style.borderColor = '#000000';
-      }
-    });
-    Array.prototype.forEach.call(selectionSwatches.main, (element) => {
-      if (element.style.color === previousColor) {
-        element.style.borderColor = element.style.color;
-      }
-      if (element.style.color === color) {
-        element.style.borderColor = '#000000';
-      }      
-    });
+    },
+    setup: function() {
+      this.createSwatches();
+    }
   }
 
   function addToInUsePalette(color) {
-    if (inUseColors.includes(color) || inUseColors.length === 25 ||
-        color === '#000000') {
-      return;
-    }
+
     let e = document.createElement("div");
     inUsePalette.appendChild(e);
     e.style.color = color;
@@ -102,31 +44,97 @@ const colorPicker = (function (pickerElement) {
     inUseColors.push(color);
   }
 
-  function clearInUsePalette() {
-    while (inUsePalette.firstChild) {
-      inUsePalette.removeChild(inUsePalette.firstChild);
+
+  const inUsePalette = {
+    element: document.getElementById('inUsePalette'),
+    colors: [], 
+    add: function(color) {
+      /* How should this actually be handled?*/
+      if (this.colors.includes(color) || color === 'rgb(0, 0, 0)') {
+        return;
+      }      
+      createSwatch(color, this.element);
+      this.colors.push(color);
+    },
+    clear: function() {
+      this.colors.length = 0;
+      while (this.element.firstChild) {
+        this.element.removeChild(this.element.firstChild);
+      }
     }
-    //empty the array
-    inUseColors.length = 0;
+    
   }
+
+  const activeSwatch ={
+    element: document.getElementById('activeColorSwatch'),
+    activeColor: 'rgb(0, 0, 0)',
+    get color() {
+      return this.activeColor;
+    },
+    set color(color) {
+      this.activeColor = color;
+      this.element.style.color = color;
+    },
+    display: function(color) {
+      //which one???
+      this.element.style.color = color;
+      this.element.style.backgroundColor = color;
+    }
+  }
+
+
+
+  // const selectionSwatches = {
+  //   inUse: inUsePalette.getElementsByTagName('div'),
+  //   main: mainPalette.getElementsByTagName('div')
+  // }
+
+  // let lastElements;
+  // let currentElements;  
+  // let inUseColors = [];
+  // let activeColor = '#000000';
+
+
+  //hi this is terrible
+  // function setBorder(color, previousColor) {
+  //   Array.prototype.forEach.call(selectionSwatches.inUse, (element) => {
+  //     if (element.style.color === previousColor) {
+  //       element.style.borderColor = element.style.color;
+  //     }
+  //     if (element.style.color === color) {
+  //       element.style.borderColor = '#000000';
+  //     }
+  //   });
+  //   Array.prototype.forEach.call(selectionSwatches.main, (element) => {
+  //     if (element.style.color === previousColor) {
+  //       element.style.borderColor = element.style.color;
+  //     }
+  //     if (element.style.color === color) {
+  //       element.style.borderColor = '#000000';
+  //     }      
+  //   });
+  // }
+
+
 
   function mouseDown(evt) {
     //border logic is still funky. Will fail if called before new
     //drawing color is set
+    const newActive = evt.target.style.color;
     //style.color returns an rgb encoded color in Chrome and IE. Maybe all browsers?
-    activeColorSwatch.style.color = evt.target.style.color;
-    setBorder(evt.target.style.color, activeColor);
-    activeColor = evt.target.style.color;
-    addToInUsePalette(activeColor);
-    drawingCanvas.setDrawingColor(activeColor);
+    activeSwatch.color = newActive;
+    //setBorder(evt.target.style.color, activeColor);
+    //activeColor = evt.target.style.color;
+    inUsePalette.add(newActive);
+    drawingCanvas.setDrawingColor(newActive);
   }
 
   function mouseOver(evt) {
-    activeColorSwatch.style.backgroundColor = evt.target.style.color;
+    activeSwatch.display(evt.target.style.color);
   }
   
   function mouseLeave(evt) {
-    activeColorSwatch.style.backgroundColor = activeColor;
+    activeSwatch.display(activeSwatch.color);
   }
 
   pickerElement.addEventListener('mousedown', mouseDown, false);
@@ -135,9 +143,10 @@ const colorPicker = (function (pickerElement) {
 
   const module = {};
 
-  module.getActiveColor = function () {return activeColor;};
+  module.getActiveColor = function () {return activeSwatch.color;};
 
-  createMainPalette();
+  //like this: initializePalette(function(){return palette;});
+  mainPalette.setup();
 
   return module;
 

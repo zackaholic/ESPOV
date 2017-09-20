@@ -9,7 +9,7 @@ const fileBrowser = (function (containerElement) {
       this.fileArray.push(entry);
       containerElement.appendChild(entry.container);
 
-      //localStorage.setItem(newFile.name, JSON.stringify(newFile.image));
+      storage.save(newFile.name, newFile.image);
 
     }, 
     exists: function(id) {
@@ -23,7 +23,7 @@ const fileBrowser = (function (containerElement) {
     updateImage: function(file, index) {
       this.fileArray[index].replaceImage(file.data.slice(), file.width);
       //also overwrite local storage
-      //localStorage.setItem(file.id, JSON.stringify(file));
+      storage.save(file.id, file);
 
     },
     remove: function(name) {
@@ -31,6 +31,7 @@ const fileBrowser = (function (containerElement) {
       if (i = this.exists(name) > -1) {
         this.fileArray.splice(i, 1);
       }
+      storage.delete(name);
     },
     refresh: function () {
       //get list of filenames from server
@@ -62,7 +63,12 @@ const fileBrowser = (function (containerElement) {
       Client.post('http://192.168.42.81/getImageData', `name=/img/${this.image.id}`)
       .then(function(res) {
         console.log(res);
-        //file.image = res; Object.assign?
+        //try this out!
+        //let data = res.split(',');
+        //data.map(JSON.parse());
+        //console.log(data);
+        //file.image.data = data.slice();
+
         //now render preview canvas
       }, function (err) {
         console.log(err);
@@ -70,17 +76,15 @@ const fileBrowser = (function (containerElement) {
     }      
 
 
-  //standardizing image object to simplify communication between file browser, 
-  //canvas editor and server
-
   const fileEntry = { 
     setup: function(image) {
-//      object destructuring?
-      this.image = {
-        id: image.id,
-        data: image.data.slice(),
-        width: image.width,
-      };
+      //this seems fine?
+      this.image = Object.assign({}, image);
+      // this.image = {
+      //   id: image.id,
+      //   data: image.data.slice(),
+      //   width: image.width,
+      // };
       this.container = document.getElementsByClassName('fileEntryTemplate')[0].cloneNode(true);
       this.container.className = 'fileEntry';
       //inherited style from html overrides style from css file, making this step necessary
@@ -104,12 +108,9 @@ const fileBrowser = (function (containerElement) {
       Client.post('http://192.168.42.81/deleteFile', `name=/img/${file.image.id}`)
       .then(function (res) {
         console.log(res);
-        //oops, got the window object here...
         console.log('deleting', file);        
         files.remove(file.image.id);
-        containerElement.removeChild(file.container);    
-        //localStorage.removeItem(this.image.id);
-     
+        containerElement.removeChild(file.container); 
       }, function (err) {
         console.log('Delete failed: ' + err);
       });
@@ -163,6 +164,7 @@ const fileBrowser = (function (containerElement) {
 
   module.addNew = function(image) {
     files.createNew(image);
+
   }
 
   module.updateExisting = function(image) {

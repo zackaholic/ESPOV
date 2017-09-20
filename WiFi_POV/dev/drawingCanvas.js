@@ -63,13 +63,23 @@ const drawingCanvas = (function (canvas) {
     return `rgb(${red}, ${green}, ${blue})`;
   }
 
-  function padImageForSaving() {
-    //array will be ragged- fill in non-values with black pixel
-    for(let i = 0; i < rows * cols; i++) {
-      if (image.data[i] === undefined) {
-        image.data[i] = 'rgb(0, 0, 0)';
-        }    
+  // function padImageForSaving() {
+  //   //array will be ragged- fill in non-values with black pixel
+  //   for(let i = 0; i < rows * cols; i++) {
+  //     if (image.data[i] === undefined) {
+  //       image.data[i] = 'rgb(0, 0, 0)';
+  //       }    
+  //   }
+  // }
+
+  function padArray(arr, len) {
+    const paddedArr = arr.slice();
+    for(let i = 0; i < len; i++) {
+      if (paddedArr[i] === undefined) {
+        paddedArr[i] = 'rgb(0, 0, 0)';
+      }    
     }
+    return paddedArr;    
   }
 
   function createUploadString() {
