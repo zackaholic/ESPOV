@@ -1,6 +1,6 @@
 const colorPicker = (function (pickerElement) {
 
-  function createColorPalette () {
+  function createPalette () {
     const palette = [];
     let index = 0;
     for (let r = 0; r < 8; r++) {
@@ -18,32 +18,21 @@ const colorPicker = (function (pickerElement) {
     swatch.style.color = color;
     swatch.style.backgroundColor = color;
     swatch.style.borderColor = color;
+    swatch.className = 'colorSwatch';
     parent.appendChild(swatch);
   }
 
   const mainPalette = {
     element : document.getElementById('mainPalette'),
-    palette : createColorPalette(),
-    createSwatches: function() {
-      for (let i = 0; i < this.palette.length; i++) {
-        createSwatch(this.palette[i], this.element);
+    createSwatches: function(palette) {
+      for (let i = 0; i < palette.length; i++) {
+        createSwatch(palette[i], this.element);
       }
     },
     setup: function() {
-      this.createSwatches();
+      this.createSwatches(createPalette());
     }
   }
-
-  function addToInUsePalette(color) {
-
-    let e = document.createElement("div");
-    inUsePalette.appendChild(e);
-    e.style.color = color;
-    e.style.backgroundColor = color;
-    e.style.borderColor = '#000000';
-    inUseColors.push(color);
-  }
-
 
   const inUsePalette = {
     element: document.getElementById('inUsePalette'),
@@ -82,19 +71,6 @@ const colorPicker = (function (pickerElement) {
     }
   }
 
-
-
-  // const selectionSwatches = {
-  //   inUse: inUsePalette.getElementsByTagName('div'),
-  //   main: mainPalette.getElementsByTagName('div')
-  // }
-
-  // let lastElements;
-  // let currentElements;  
-  // let inUseColors = [];
-  // let activeColor = '#000000';
-
-
   //hi this is terrible
   // function setBorder(color, previousColor) {
   //   Array.prototype.forEach.call(selectionSwatches.inUse, (element) => {
@@ -115,22 +91,22 @@ const colorPicker = (function (pickerElement) {
   //   });
   // }
 
-
-
   function mouseDown(evt) {
-    //border logic is still funky. Will fail if called before new
-    //drawing color is set
-    const newActive = evt.target.style.color;
-    //style.color returns an rgb encoded color in Chrome and IE. Maybe all browsers?
-    activeSwatch.color = newActive;
-    //setBorder(evt.target.style.color, activeColor);
-    //activeColor = evt.target.style.color;
-    inUsePalette.add(newActive);
-    drawingCanvas.setDrawingColor(newActive);
+    if (evt.target.className === 'colorSwatch') {
+      const selection = evt.target.style.color;
+      activeSwatch.color = selection;
+      //setBorder(evt.target.style.color, activeColor);
+      inUsePalette.add(selection);
+      drawingCanvas.setDrawingColor(selection);
+    }
   }
 
   function mouseOver(evt) {
-    activeSwatch.display(evt.target.style.color);
+    if (evt.target.className === 'colorSwatch') {
+      activeSwatch.display(evt.target.style.color);
+    } else {
+      activeSwatch.display(activeSwatch.color);
+    }
   }
   
   function mouseLeave(evt) {
@@ -141,12 +117,11 @@ const colorPicker = (function (pickerElement) {
   pickerElement.addEventListener('mouseover', mouseOver, false);
   pickerElement.addEventListener('mouseleave', mouseLeave, false);
 
+  mainPalette.setup();
+
   const module = {};
 
   module.getActiveColor = function () {return activeSwatch.color;};
-
-  //like this: initializePalette(function(){return palette;});
-  mainPalette.setup();
 
   return module;
 
