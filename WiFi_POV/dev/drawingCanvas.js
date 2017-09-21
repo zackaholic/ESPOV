@@ -29,15 +29,15 @@ const drawingCanvas = (function (canvasElement) {
     return `rgb(${red}, ${green}, ${blue})`;
   }
 
-  function padArray(arr, len) {
-    const paddedArr = arr.slice();
-    for(let i = 0; i < len; i++) {
-      if (paddedArr[i] === undefined) {
-        paddedArr[i] = 'rgb(0, 0, 0)';
-      }    
-    }
-    return paddedArr;    
-  }
+  // function padArray(arr, len) {
+  //   const paddedArr = arr.slice();
+  //   for(let i = 0; i < len; i++) {
+  //     if (paddedArr[i] === undefined) {
+  //       paddedArr[i] = 'rgb(0, 0, 0)';
+  //     }    
+  //   }
+  //   return paddedArr;    
+  // }
 
   const canvas = {
     element: canvasElement,
@@ -55,8 +55,10 @@ const drawingCanvas = (function (canvasElement) {
     initialize: function(r, c) {
       this.rows = r;
       this.cols = c;
-      this.element.addEventListener('mousedown', this.mouseDown);
-      this.element.addEventListener('mouseup', this.mouseUp);
+      this.element.addEventListener('mousedown', this.mouseDown.bind(this));
+      this.element.addEventListener('mouseup', this.mouseUp.bind(this));
+      this.image.data.length = r * c;
+      this.image.data.fill('rgb(0, 0, 0)');
     },
     clear: function() {
       this.ctx.clearRect(0, 0, this.element.width, this.element.height);
@@ -72,7 +74,8 @@ const drawingCanvas = (function (canvasElement) {
     },
     reset: function() {
       this.image.id = 0;
-      this.image.data.length = 0;
+//      this.image.data.length = 0;
+      this.image.data.fill('rgb(0, 0, 0)');
       this.image.width = 30;
       this.clear();
     },
@@ -85,13 +88,10 @@ const drawingCanvas = (function (canvasElement) {
     drawPixel: function (index) {
       if (this.image.data[index] !== this.drawingColor) {
         this.ctx.fillStyle = this.drawingColor;
-
         const x = index % this.cols;
         const y = Math.floor(index / this.cols);
-//      if (x <= cols && y <= rows){
         this.ctx.fillRect(x * this.pixelSize, y * this.pixelSize, this.pixelSize, this.pixelSize);
         this.image.data[index] = this.drawingColor;
-//      }
       }
     },
     mouseMove: function(evt) {
@@ -101,55 +101,57 @@ const drawingCanvas = (function (canvasElement) {
         const index = pixelIndexFromCoordinates(mousePos);
         if (canvas.drawable(mousePos)){
           this.drawPixel(index);
-
-          //const pixelIndex = pixelIndexFromCoordinates(mousePos);
-          // if (image.data[pixelIndex] !== drawingColor) {
-          //   image.data[pixelIndex] = drawingColor;
-          //   drawPixel(pixelIndex, drawingColor);
-          // }
         }
       } else {
         //only got here is lmb was released outside of page- remove listener
-        this.removeEventListener('mousemove', this.mouseMove)
+        this.element.removeEventListener('mousemove', this.mouseMove)
       }
     },
     mouseDown: function(evt) {
-      //'this' value is canvas element
-      this.addEventListener('mousemove', this.mouseMove);
+      this.element.addEventListener('mousemove', this.mouseMove.bind(this));
       const mousePos = getMousePos(evt);
 
       if (canvas.drawable(mousePos)) {
         canvas.drawPixel(pixelIndexFromCoordinates(mousePos));
-
-        // if (image.data[pixelIndex] === drawingColor) {
-        //   return;
-        // }
-        
-        // image.data[pixelIndex] = drawingColor;
-        // drawPixel(pixelIndex, drawingColor);
       }
     },
     mouseUp: function(evt) {
-      this.removeEventListener('mousemove', this.mouseMove);
+      this.element.removeEventListener('mousemove', this.mouseMove);
     }
   }
   
-  function exportImage() {
-    //image data array will be ragged- loop through every index
-    const pixels = image.data.slice();
-
-    for(let i = 0; i < rows * cols; i++) {
-      if (pixels[i] === undefined || pixels[i] === 'rgb(0, 0, 0)') {
-        pixels[i] = 0;
-      } else {
-        const rgb = pixels[i].match(/[0-9]+/g);        
-        var red = +rgb[0];
-        var green = +rgb[1];
-        var blue = +rgb[2];
-        var color8 = (rgb[0]) | (green >> 3) | blue >> 6;
-        pixels[i] = color8;        
-      }
+  function rgbStringTo8Bit(color) {
+    if (color === 'rgb(0, 0, 0') {
+      return 0;
+    } else {
+      const rgb = color.match(/[0-9]+/g);        
+      // const red = +rgb[0];
+      // const green = +rgb[1];
+      // const blue = +rgb[2];
+      const color8 = +rgb[0] | +rgb[1] >> 3 | +rgb[2] >> 6;
+      return color8;
+//      return (+rgb[0] | +rgb[1] >> 3 | +rgb[2] >> 6);   
     }
+  }
+
+  function exportImage() {
+
+    const pixels = image.data.slice();
+    pixels.map(rgbStringTo8Bit);
+
+    // for(let i = 0; i < rows * cols; i++) {
+    //   if (pixels[i] === 'rgb(0, 0, 0)') {
+    //     pixels[i] = 0;
+    //   } else {
+    //     const rgb = pixels[i].match(/[0-9]+/g);        
+    //     var red = +rgb[0];
+    //     var green = +rgb[1];
+    //     var blue = +rgb[2];
+    //     var color8 = (rgb[0]) | (green >> 3) | blue >> 6;
+    //     pixels[i] = color8;        
+    //   }
+    // }
+    //this is just returning the image object now??? What's going on?
     return `name=/img/${image.id}
             &width=${image.width}
             &image=${pixels.join()}`
@@ -179,12 +181,8 @@ const drawingCanvas = (function (canvasElement) {
 
     element: document.getElementById('fileSaveButton'),
     saveFile: function() {
+
       //TESTING//////////////////////////////////////
-      // for (let i = 0; i < rows * cols; i++) {
-      //   image.data[i] = image.data[i] === undefined
-      //                 ? 'rgb(0, 0, 0)'
-      //                 : image.data[i];
-      // }
       // if (image.id === 0) {
       //   image.id = Date.now();
       //   fileBrowser.addNew(image);
@@ -194,7 +192,7 @@ const drawingCanvas = (function (canvasElement) {
       //   resetCanvas();
       // }
       //TESTING////////////////////////////////////// 
-      padImageForSaving();
+
 
       let overwriting = false;
       if (image.id > 0) {
