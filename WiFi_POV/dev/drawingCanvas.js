@@ -1,19 +1,10 @@
 
 
-const drawingCanvas = (function (canvas) {
-  const ctx = canvas.getContext('2d');
-  const image = {
-    id: 0,
-    data: [],
-    width: 30
-  }
-  let pixelSize = 20;
-  let drawingColor = 'rgb(0, 0, 0)';
-  let rows;
-  let cols;
+const drawingCanvas = (function (canvasElement) {
+
 
   function getMousePos (evt) {
-    const rect = canvas.getBoundingClientRect();
+    const rect = canvasElement.getBoundingClientRect();
     return {
       x : evt.clientX - rect.left,
       y : evt.clientY - rect.top
@@ -21,39 +12,14 @@ const drawingCanvas = (function (canvas) {
   }
 
   function pixelIndexFromCoordinates (mouseCoords) {
-    const x = Math.floor(mouseCoords.x / pixelSize);
-    const y = Math.floor(mouseCoords.y / pixelSize);
-    return y * cols + x;
+    const x = Math.floor(mouseCoords.x / canvas.pixelSize);
+    const y = Math.floor(mouseCoords.y / canvas.pixelSize);
+    return y * canvas.cols + x;
   }
 
-  function setPixelSize (size) {
-    pixelSize = size;
-  }
 
-  function clearCanvas () {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);       
-  }
-
-  function drawPixel (index, color) {
-    ctx.fillStyle = color;
-
-    let x = index % cols;
-    let y = Math.floor(index / cols);
-    if (x <= cols && y <= rows){
-      ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-    }
-  }
-
-  function isDrawable (mousePos) {
-    return (mousePos.x < pixelSize * cols && mousePos.y < pixelSize * rows);
-  }
   
-  function redrawCanvas (buff) {
-    clearCanvas();
-    image.data.forEach((value, index) => {
-      drawPixel(index, value);
-    }) 
-  }
+
 
   function color8bitTo24bitRGB(color) {
     const red = color & 0b11100000;
@@ -62,15 +28,6 @@ const drawingCanvas = (function (canvas) {
 
     return `rgb(${red}, ${green}, ${blue})`;
   }
-
-  // function padImageForSaving() {
-  //   //array will be ragged- fill in non-values with black pixel
-  //   for(let i = 0; i < rows * cols; i++) {
-  //     if (image.data[i] === undefined) {
-  //       image.data[i] = 'rgb(0, 0, 0)';
-  //       }    
-  //   }
-  // }
 
   function padArray(arr, len) {
     const paddedArr = arr.slice();
@@ -82,7 +39,102 @@ const drawingCanvas = (function (canvas) {
     return paddedArr;    
   }
 
-  function createUploadString() {
+  const canvas = {
+    element: canvasElement,
+    ctx : canvasElement.getContext('2d'),
+    image : {
+      id: 0,
+      data: [],
+      width: 30
+    },
+    pixelSize: 20,
+    drawingColor: 'rgb(0, 0, 0)',
+    rows: 0,
+    cols: 0,
+
+    initialize: function(r, c) {
+      this.rows = r;
+      this.cols = c;
+      this.element.addEventListener('mousedown', this.mouseDown);
+      this.element.addEventListener('mouseup', this.mouseUp);
+    },
+    clear: function() {
+      this.ctx.clearRect(0, 0, this.element.width, this.element.height);
+    },
+    setColor: function(color) {
+      this.drawingColor = color;
+    },
+    redraw: function() {
+      this.clear();
+      this.image.data.forEach((value, index) => {
+        this.drawPixel(index, value);
+      })
+    },
+    reset: function() {
+      this.image.id = 0;
+      this.image.data.length = 0;
+      this.image.width = 30;
+      this.clear();
+    },
+    loadImage: function(buff) {
+
+    },
+    drawable: function (mousePos) {
+      return (mousePos.x < this.pixelSize * this.cols && mousePos.y < this.pixelSize * this.rows);
+    },
+    drawPixel: function (index) {
+      if (this.image.data[index] !== this.drawingColor) {
+        this.ctx.fillStyle = this.drawingColor;
+
+        const x = index % this.cols;
+        const y = Math.floor(index / this.cols);
+//      if (x <= cols && y <= rows){
+        this.ctx.fillRect(x * this.pixelSize, y * this.pixelSize, this.pixelSize, this.pixelSize);
+        this.image.data[index] = this.drawingColor;
+//      }
+      }
+    },
+    mouseMove: function(evt) {
+      //check if lmb is pressed
+      if (evt.buttons === 1) {
+        const mousePos = getMousePos(evt);
+        const index = pixelIndexFromCoordinates(mousePos);
+        if (canvas.drawable(mousePos)){
+          this.drawPixel(index);
+
+          //const pixelIndex = pixelIndexFromCoordinates(mousePos);
+          // if (image.data[pixelIndex] !== drawingColor) {
+          //   image.data[pixelIndex] = drawingColor;
+          //   drawPixel(pixelIndex, drawingColor);
+          // }
+        }
+      } else {
+        //only got here is lmb was released outside of page- remove listener
+        this.removeEventListener('mousemove', this.mouseMove)
+      }
+    },
+    mouseDown: function(evt) {
+      //'this' value is canvas element
+      this.addEventListener('mousemove', this.mouseMove);
+      const mousePos = getMousePos(evt);
+
+      if (canvas.drawable(mousePos)) {
+        canvas.drawPixel(pixelIndexFromCoordinates(mousePos));
+
+        // if (image.data[pixelIndex] === drawingColor) {
+        //   return;
+        // }
+        
+        // image.data[pixelIndex] = drawingColor;
+        // drawPixel(pixelIndex, drawingColor);
+      }
+    },
+    mouseUp: function(evt) {
+      this.removeEventListener('mousemove', this.mouseMove);
+    }
+  }
+  
+  function exportImage() {
     //image data array will be ragged- loop through every index
     const pixels = image.data.slice();
 
@@ -103,46 +155,9 @@ const drawingCanvas = (function (canvas) {
             &image=${pixels.join()}`
   }
 
-  function mouseMove(evt) {
-    //check if lmb is pressed
-    if (evt.buttons === 1) {
-      const mousePos = getMousePos(evt);
-      if (isDrawable(mousePos)){
-        const pixelIndex = pixelIndexFromCoordinates(mousePos);
 
-        if (image.data[pixelIndex] !== drawingColor) {
-          image.data[pixelIndex] = drawingColor;
-          drawPixel(pixelIndex, drawingColor);
-        }
-      }
-    } else {
-      //only got here is lmb was released outside of page- remove listener
-      canvas.removeEventListener('mousemove', mouseMove)
-    }
-  }
 
-  function mouseUp() {
-    canvas.removeEventListener('mousemove', mouseMove);
-  }
 
-  function mouseDown(evt) {
-    canvas.addEventListener('mousemove', mouseMove);
-    const mousePos = getMousePos(evt);
-
-    if (isDrawable(mousePos)) {
-      const pixelIndex = pixelIndexFromCoordinates(mousePos);
-
-      if (image.data[pixelIndex] === drawingColor) {
-        return;
-      }
-      
-      image.data[pixelIndex] = drawingColor;
-      drawPixel(pixelIndex, drawingColor);
-    }
-  }
-
-  canvas.addEventListener('mousedown', mouseDown);
-  canvas.addEventListener('mouseup', mouseUp);
 
 //preview sends image data with a predefined filename- overwriting last preview file
   const previewButton = {
@@ -210,21 +225,6 @@ const drawingCanvas = (function (canvas) {
   const module = {};
 
 
-  function resetCanvas() {
-    image.id = 0;
-    image.data.length = 0;
-    image.width = 30;
-    clearCanvas();
-  }
-
-  // module.createImage = function() {
-  //   image.id = image.id > 0 ? image.id : Data.now();
-  //   return image;
-  // }
-
-  // module.getImageString = function () {
-  //   return canvasToString();
-  // }
 
   module.loadFile = function (file) {
     image.id = file.id;
@@ -235,12 +235,11 @@ const drawingCanvas = (function (canvas) {
   }
 
   module.setDrawingColor = function(color) {
-    drawingColor = color;
+    canvas.setColor(color);
   }
 
   module.initialize = function (r, c) {
-    rows = r;
-    cols = c;
+    canvas.initialize(r, c);
   }
 
   return module;
