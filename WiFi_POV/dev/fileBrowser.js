@@ -9,29 +9,35 @@ const fileBrowser = (function (containerElement) {
       this.fileArray.push(entry);
       containerElement.appendChild(entry.container);
 
-      storage.save(newFile.name, newFile.image);
+      storage.save(entry.id, entry);
 
+      console.log(this.fileArray);
     }, 
     exists: function(id) {
       return this.fileArray.findIndex(function(e) {
         return e.image.id === id;
       });
     },
-    add: function(newFile){
-
+    add: function(image){
+      const existsAt = this.exists(image.id);
+      if (existsAt === -1) {
+        this.createNew(image);
+      } else {
+        this.updateImage(image, existsAt);
+      }
     },
-    updateImage: function(file, index) {
-      this.fileArray[index].replaceImage(file.data.slice(), file.width);
+    updateImage: function(image, index) {
+      this.fileArray[index].replaceImage(image.data.slice(), image.width);
       //also overwrite local storage
-      storage.save(file.id, file);
+      storage.save(image.id, image);
 
     },
-    remove: function(name) {
+    remove: function(id) {
       let i;
-      if (i = this.exists(name) > -1) {
+      if (i = this.exists(id) > -1) {
         this.fileArray.splice(i, 1);
       }
-      storage.delete(name);
+      storage.delete(id);
     },
     refresh: function () {
       //get list of filenames from server
@@ -78,13 +84,13 @@ const fileBrowser = (function (containerElement) {
 
   const fileEntry = { 
     setup: function(image) {
-      //this seems fine?
-      this.image = Object.assign({}, image);
-      // this.image = {
-      //   id: image.id,
-      //   data: image.data.slice(),
-      //   width: image.width,
-      // };
+      //Object.assign copies a reference to the array, not the array value
+//      this.image = Object.assign({}, image);
+      this.image = {
+        id: image.id,
+        data: image.data.slice(),
+        width: image.width,
+      };
       this.container = document.getElementsByClassName('fileEntryTemplate')[0].cloneNode(true);
       this.container.className = 'fileEntry';
       //inherited style from html overrides style from css file, making this step necessary
@@ -116,8 +122,7 @@ const fileBrowser = (function (containerElement) {
       });
     },
     edit: function() {
-      drawingCanvas.loadFile(this.image);
-      console.log('editing', this);
+      drawingCanvas.loadImage(this.image);
     },   
     replaceImage: function(data, width) {
       this.image.data = data;
@@ -162,18 +167,8 @@ const fileBrowser = (function (containerElement) {
 
   const module = {};
 
-  module.addNew = function(image) {
-    files.createNew(image);
-
-  }
-
-  module.updateExisting = function(image) {
-    const index = files.exists(image.id);
-    if (index > -1) {
-      files.updateImage(image, index);
-    } else {
-      throw new Error('File cannot be updated because it doesn\'t exist');
-    }
+  module.add = function(image) {
+    files.add(image);
   }
 
   //module.refresh = fileList.refresh.bind(fileList);

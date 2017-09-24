@@ -11,15 +11,11 @@ const drawingCanvas = (function (canvasElement) {
     };
   }
 
-  function pixelIndexFromCoordinates (mouseCoords) {
-    const x = Math.floor(mouseCoords.x / canvas.pixelSize);
-    const y = Math.floor(mouseCoords.y / canvas.pixelSize);
+  function coordinatesToPixelIndex (mouseCoords, pixelSize) {
+    const x = Math.floor(mouseCoords.x / pixelSize);
+    const y = Math.floor(mouseCoords.y / pixelSize);
     return y * canvas.cols + x;
   }
-
-
-  
-
 
   function color8bitTo24bitRGB(color) {
     const red = color & 0b11100000;
@@ -28,16 +24,6 @@ const drawingCanvas = (function (canvasElement) {
 
     return `rgb(${red}, ${green}, ${blue})`;
   }
-
-  // function padArray(arr, len) {
-  //   const paddedArr = arr.slice();
-  //   for(let i = 0; i < len; i++) {
-  //     if (paddedArr[i] === undefined) {
-  //       paddedArr[i] = 'rgb(0, 0, 0)';
-  //     }    
-  //   }
-  //   return paddedArr;    
-  // }
 
   const canvas = {
     element: canvasElement,
@@ -74,7 +60,6 @@ const drawingCanvas = (function (canvasElement) {
     },
     reset: function() {
       this.image.id = 0;
-//      this.image.data.length = 0;
       this.image.data.fill('rgb(0, 0, 0)');
       this.image.width = 30;
       this.clear();
@@ -85,22 +70,28 @@ const drawingCanvas = (function (canvasElement) {
     drawable: function (mousePos) {
       return (mousePos.x < this.pixelSize * this.cols && mousePos.y < this.pixelSize * this.rows);
     },
-    drawPixel: function (index) {
-      if (this.image.data[index] !== this.drawingColor) {
-        this.ctx.fillStyle = this.drawingColor;
-        const x = index % this.cols;
-        const y = Math.floor(index / this.cols);
-        this.ctx.fillRect(x * this.pixelSize, y * this.pixelSize, this.pixelSize, this.pixelSize);
-        this.image.data[index] = this.drawingColor;
-      }
+    drawPixel: function (index, color) {
+      this.ctx.fillStyle = color;
+      const x = index % this.cols;
+      const y = Math.floor(index / this.cols);
+      this.ctx.fillRect(x * this.pixelSize, y * this.pixelSize, this.pixelSize, this.pixelSize);
+      this.image.data[index] = color;
     },
+    get queryString() {
+      const pixels = this.image.data.slice();
+      pixels.map(rgbStringTo8Bit);
+
+      return `name=/img/${this.image.id}
+              &width=${this.image.width}
+              &image=${pixels.join()}`
+    }, 
     mouseMove: function(evt) {
       //check if lmb is pressed
       if (evt.buttons === 1) {
         const mousePos = getMousePos(evt);
-        const index = pixelIndexFromCoordinates(mousePos);
-        if (canvas.drawable(mousePos)){
-          this.drawPixel(index);
+        const index = coordinatesToPixelIndex(mousePos, this.pixelSize);
+        if (this.drawable(mousePos)){
+          this.drawPixel(index, this.drawingColor);
         }
       } else {
         //only got here is lmb was released outside of page- remove listener
@@ -111,8 +102,11 @@ const drawingCanvas = (function (canvasElement) {
       this.element.addEventListener('mousemove', this.mouseMove.bind(this));
       const mousePos = getMousePos(evt);
 
-      if (canvas.drawable(mousePos)) {
-        canvas.drawPixel(pixelIndexFromCoordinates(mousePos));
+      if (this.drawable(mousePos)) {
+        this.drawPixel(
+          coordinatesToPixelIndex(mousePos, this.pixelSize),
+          this.drawingColor
+          );
       }
     },
     mouseUp: function(evt) {
@@ -121,42 +115,13 @@ const drawingCanvas = (function (canvasElement) {
   }
   
   function rgbStringTo8Bit(color) {
-    if (color === 'rgb(0, 0, 0') {
+    if (color === 'rgb(0, 0, 0)') {
       return 0;
     } else {
       const rgb = color.match(/[0-9]+/g);        
-      // const red = +rgb[0];
-      // const green = +rgb[1];
-      // const blue = +rgb[2];
-      const color8 = +rgb[0] | +rgb[1] >> 3 | +rgb[2] >> 6;
-      return color8;
-//      return (+rgb[0] | +rgb[1] >> 3 | +rgb[2] >> 6);   
+      return (+rgb[0] | (+rgb[1] >> 3) | (+rgb[2] >> 6));
     }
   }
-
-  function exportImage() {
-
-    const pixels = image.data.slice();
-    pixels.map(rgbStringTo8Bit);
-
-    // for(let i = 0; i < rows * cols; i++) {
-    //   if (pixels[i] === 'rgb(0, 0, 0)') {
-    //     pixels[i] = 0;
-    //   } else {
-    //     const rgb = pixels[i].match(/[0-9]+/g);        
-    //     var red = +rgb[0];
-    //     var green = +rgb[1];
-    //     var blue = +rgb[2];
-    //     var color8 = (rgb[0]) | (green >> 3) | blue >> 6;
-    //     pixels[i] = color8;        
-    //   }
-    // }
-    //this is just returning the image object now??? What's going on?
-    return `name=/img/${image.id}
-            &width=${image.width}
-            &image=${pixels.join()}`
-  }
-
 
 
 
@@ -181,41 +146,23 @@ const drawingCanvas = (function (canvasElement) {
 
     element: document.getElementById('fileSaveButton'),
     saveFile: function() {
-
-      //TESTING//////////////////////////////////////
-      // if (image.id === 0) {
-      //   image.id = Date.now();
-      //   fileBrowser.addNew(image);
-      //   resetCanvas();
-      // } else {
-      //   fileBrowser.updateExisting(image);
-      //   resetCanvas();
-      // }
-      //TESTING////////////////////////////////////// 
-
-
-      let overwriting = false;
-      if (image.id > 0) {
-        overwriting = true;        
-      } else {
-        image.id = Date.now();
-      }
-
-      Client.post('http://192.168.42.81/saveFile', createUploadString())
-      .then(function (res) {
-        console.log(res);
-        //if image successfully saved, add it to file list or update existing
-        if (overwriting) {
-          fileBrowser.updateExisting(image);
-          resetCanvas();
-        } else {
-          fileBrowser.addNew(image);
-          resetCanvas();          
-        }
-      }, function (err) {
-        console.log(err);
-      });
-    }    
+      canvas.image.id = canvas.image.id === 0
+                        ? Date.now()
+                        : canvas.image.id; 
+      fileBrowser.add(canvas.image);
+      canvas.reset();
+      
+  //     Client.post('http://192.168.42.81/saveFile', canvas.queryString)
+  //     .then(function (res) {
+  //       console.log(res);
+  //       //if image successfully saved, add to file list
+  //       fileBrowser.add(image);
+  //       resetCanvas();
+  //     }, function (err) {
+  //       console.log(err);
+  //     });
+  //   }    
+    }
   }
   saveButton.element.addEventListener('click', saveButton.saveFile.bind(saveButton));
 
@@ -224,12 +171,14 @@ const drawingCanvas = (function (canvasElement) {
 
 
 
-  module.loadFile = function (file) {
-    image.id = file.id;
-    image.data = file.data.slice();
-    image.width = file.width;
-
-    redrawCanvas();
+  module.loadImage = function (image) {
+//    canvas.image = Object.assign({}, image);
+    canvas.image = {
+      id: image.id,
+      data: image.data.slice(),
+      width: image.width
+    }
+    canvas.redraw();
   }
 
   module.setDrawingColor = function(color) {
