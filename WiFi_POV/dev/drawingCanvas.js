@@ -28,6 +28,10 @@ const drawingCanvas = (function (canvasElement) {
   const canvas = {
     element: canvasElement,
     ctx : canvasElement.getContext('2d'),
+//create image on demand instead of update a property    
+//     image: (imageId, dataBuffer, imageWidth) => {
+//       {id: imageId, data: dataBuffer, width: imageWidth}; 
+//     }
     image : {
       id: 0,
       data: [],
@@ -71,6 +75,11 @@ const drawingCanvas = (function (canvasElement) {
     loadImage: function(buff) {
 
     },
+    //a more general drawable():
+//     const contained = (coord, width, height, scale) {
+//       return (coord.x < scale * width && coord.y < scale * height);
+//     }
+
 //     drawable: function (mousePos, pixelSize, cols) {
 //       return (mousePos.x < pixelSize * cols && mousePos.y < pixelSize * rows);
 //     }
