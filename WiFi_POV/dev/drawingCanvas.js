@@ -46,12 +46,16 @@ const drawingCanvas = (function (canvasElement) {
       this.image.data.length = r * c;
       this.image.data.fill('rgb(0, 0, 0)');
     },
+//     const clear = (context, canvas) => {
+//       context.clearRect(0, 0, canvas.width, canvas.height);
+//     }
     clear: function() {
       this.ctx.clearRect(0, 0, this.element.width, this.element.height);
     },
     setColor: function(color) {
       this.drawingColor = color;
     },
+    
     redraw: function() {
       this.clear();
       this.image.data.forEach((value, index) => {
@@ -67,6 +71,9 @@ const drawingCanvas = (function (canvasElement) {
     loadImage: function(buff) {
 
     },
+//     drawable: function (mousePos, pixelSize, cols) {
+//       return (mousePos.x < pixelSize * cols && mousePos.y < pixelSize * rows);
+//     }
     drawable: function (mousePos) {
       return (mousePos.x < this.pixelSize * this.cols && mousePos.y < this.pixelSize * this.rows);
     },
