@@ -1,5 +1,3 @@
-
-
 const drawingCanvas = (function (canvasElement) {
 
 
@@ -28,6 +26,10 @@ const drawingCanvas = (function (canvasElement) {
   const canvas = {
     element: canvasElement,
     ctx : canvasElement.getContext('2d'),
+//create image on demand instead of update a property    
+//     image: (imageId, dataBuffer, imageWidth) => {
+//       {id: imageId, data: dataBuffer, width: imageWidth}; 
+//     }
     image : {
       id: 0,
       data: [],
@@ -46,12 +48,16 @@ const drawingCanvas = (function (canvasElement) {
       this.image.data.length = r * c;
       this.image.data.fill('rgb(0, 0, 0)');
     },
+//     const clear = (context, canvas) => {
+//       context.clearRect(0, 0, canvas.width, canvas.height);
+//     }
     clear: function() {
       this.ctx.clearRect(0, 0, this.element.width, this.element.height);
     },
     setColor: function(color) {
       this.drawingColor = color;
     },
+    
     redraw: function() {
       this.clear();
       this.image.data.forEach((value, index) => {
@@ -67,6 +73,10 @@ const drawingCanvas = (function (canvasElement) {
     loadImage: function(buff) {
 
     },
+    //a more general drawable():
+//     const contained = (coord, width, height, scale) {
+//       return (coord.x < scale * width && coord.y < scale * height);
+//     }
     drawable: function (mousePos) {
       return (mousePos.x < this.pixelSize * this.cols && mousePos.y < this.pixelSize * this.rows);
     },
@@ -77,6 +87,14 @@ const drawingCanvas = (function (canvasElement) {
       this.ctx.fillRect(x * this.pixelSize, y * this.pixelSize, this.pixelSize, this.pixelSize);
       this.image.data[index] = color;
     },
+  // const queryString = (params) => {
+  //   qs = '';
+  //   for (key in params) {
+  //     qs += `${key}=${params[key]}&`;      
+  //   }
+  //   qs = qs.replace(/&$/, '');
+  //   return qs;
+  // }
     get queryString() {
       const pixels = this.image.data.slice();
       pixels.map(rgbStringTo8Bit);
@@ -192,7 +210,4 @@ const drawingCanvas = (function (canvasElement) {
   return module;
 
 }(document.getElementById("drawingCanvas")));
-
-
-
 
