@@ -77,6 +77,13 @@ const drawingCanvas = (function (canvasElement) {
 //     const contained = (coord, width, height, scale) {
 //       return (coord.x < scale * width && coord.y < scale * height);
 //     }
+<<<<<<< HEAD
+=======
+
+//     drawable: function (mousePos, pixelSize, cols) {
+//       return (mousePos.x < pixelSize * cols && mousePos.y < pixelSize * rows);
+//     }
+>>>>>>> 18e12cb11a7da0a74ff996d54445e1b1ab7904bf
     drawable: function (mousePos) {
       return (mousePos.x < this.pixelSize * this.cols && mousePos.y < this.pixelSize * this.rows);
     },
@@ -87,6 +94,7 @@ const drawingCanvas = (function (canvasElement) {
       this.ctx.fillRect(x * this.pixelSize, y * this.pixelSize, this.pixelSize, this.pixelSize);
       this.image.data[index] = color;
     },
+<<<<<<< HEAD
   // const queryString = (params) => {
   //   qs = '';
   //   for (key in params) {
@@ -95,6 +103,16 @@ const drawingCanvas = (function (canvasElement) {
   //   qs = qs.replace(/&$/, '');
   //   return qs;
   // }
+=======
+//     const queryString = (params) => {
+//       qs = '';
+//       for (key in params) {
+//         qs += `${key}=${params[key]}&`;
+//       }
+//       //now remove last '&' like qs.replace(/&$/);
+//       return qs;
+//     }
+>>>>>>> 18e12cb11a7da0a74ff996d54445e1b1ab7904bf
     get queryString() {
       const pixels = this.image.data.slice();
       pixels.map(rgbStringTo8Bit);
