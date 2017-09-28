@@ -93,6 +93,14 @@ const drawingCanvas = (function (canvasElement) {
       this.ctx.fillRect(x * this.pixelSize, y * this.pixelSize, this.pixelSize, this.pixelSize);
       this.image.data[index] = color;
     },
+//     const queryString = (params) => {
+//       qs = '';
+//       for (key in params) {
+//         qs += `${key}=${params[key]}&`;
+//       }
+//       //now remove last '&' like qs.replace(/&$/);
+//       return qs;
+//     }
     get queryString() {
       const pixels = this.image.data.slice();
       pixels.map(rgbStringTo8Bit);
