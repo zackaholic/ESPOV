@@ -100,9 +100,11 @@ const colorPicker = (function (pickerElement) {
       drawingCanvas.setDrawingColor(selection);
     }
   }
-
+  //why are these named after mouse events? Pass in a function that does
+  //the thing!
   function mouseOver(evt) {
-    if (evt.target.className === 'colorSwatch') {
+//    if (evt.target != evt.currentTarget) {
+     if (evt.target.className === 'colorSwatch') {
       activeSwatch.display(evt.target.style.color);
     } else {
       activeSwatch.display(activeSwatch.color);

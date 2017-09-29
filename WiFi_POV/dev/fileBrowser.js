@@ -85,7 +85,7 @@ const fileBrowser = (function (containerElement) {
   const fileEntry = { 
     setup: function(image) {
       //Object.assign copies a reference to the array, not the array value
-//      this.image = Object.assign({}, image);
+      //this.image = Object.assign({}, image);
       this.image = {
         id: image.id,
         data: image.data.slice(),

@@ -23,16 +23,18 @@
  padding: 4px;
  margin-right: 4px;
 }
+
 #fileUploadButton {
 margin-top: 3px;
 background-color: #9ddfdb;
 }
+
 #colorPicker {
  touch-action: none; 
  display: inline-block; 
-
  border:1px solid;
 }
+
 #activeColorSwatch {
  width:130px; 
  height:50px; 
@@ -41,15 +43,18 @@ background-color: #9ddfdb;
  border:1px solid;
  margin: 2px;
 }
+
 #inUsePalette {
- width: 130px;
- height: 130px;
- border:1px solid;
- margin: 2px;
- display: inline-block;
- float: left;
- clear: left;
+  width: 130px;
+  height: 130px;
+  border:1px solid;
+  margin: 2px;
+  display: inline-block;
+  float: left;
+  clear: left;
+  overflow-y: auto;  
 }
+
 #inUsePalette div {
   margin: 1px;
   border: 2px solid;
@@ -78,16 +83,8 @@ background-color: #9ddfdb;
 }
 
 #mainPalette {
-
  width: 500px;
  position: relative;
-}
-#mainPalette td {
-  margin: 0px;
-  border: 2px solid;
-  padding: 0px;
-  width: 20px;
-  height: 20px;
 }
 
 #mainPalette div {
@@ -96,6 +93,7 @@ background-color: #9ddfdb;
   padding: 0px;
   width: 20px;
   height: 20px;
+  vertical-align: top;
   display: inline-block;  
 }
 
