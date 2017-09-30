@@ -45,9 +45,15 @@ const colorPicker = (function (pickerElement) {
     return hasColor;
   }
 
+
+  const removeAllChildren = parent => {
+    while(parent.firstChild) {
+      parent.removeChild(parent.firstChild);
+    }
+  }
+
   const inUsePalette = {
     //ditch colors array and just look through children of inUse
-
     element: document.getElementById('inUsePalette'),
     add: function(color) {
       /* How should this actually be handled?*/
@@ -57,9 +63,7 @@ const colorPicker = (function (pickerElement) {
       createSwatch(color, this.element);
     },
     clear: function() {
-      while (this.element.firstChild) {
-        this.element.removeChild(this.element.firstChild);
-      }
+      removeAllChildren(this.element);
     }
   }
 
