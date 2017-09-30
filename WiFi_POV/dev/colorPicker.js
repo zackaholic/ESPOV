@@ -13,6 +13,7 @@ const colorPicker = (function (pickerElement) {
     return palette;
   }
 
+
   function createSwatch(color, parent) {
     const swatch = document.createElement('div');
     swatch.style.color = color;
@@ -34,24 +35,32 @@ const colorPicker = (function (pickerElement) {
     }
   }
 
+  const hasChildWithColor = (parent, color) => {
+    let hasColor = false;
+    [].forEach.call(parent.childNodes, (e) => {
+      if (e.style.color === color) {
+        hasColor = true;
+      }
+    })
+    return hasColor;
+  }
+
   const inUsePalette = {
+    //ditch colors array and just look through children of inUse
+
     element: document.getElementById('inUsePalette'),
-    colors: [], 
     add: function(color) {
       /* How should this actually be handled?*/
-      if (this.colors.includes(color) || color === 'rgb(0, 0, 0)') {
+      if (hasChildWithColor(this.element, color) || color === 'rgb(0, 0, 0)') {
         return;
       }      
       createSwatch(color, this.element);
-      this.colors.push(color);
     },
     clear: function() {
-      this.colors.length = 0;
       while (this.element.firstChild) {
         this.element.removeChild(this.element.firstChild);
       }
     }
-    
   }
 
   const activeSwatch ={
